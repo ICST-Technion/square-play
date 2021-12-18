@@ -1,12 +1,11 @@
+from pieces import Piece
 
 """
-the board is just a list of a lines (one unit long), where a line is a set of two coordinates.
+The Board is just a list of a lines (one unit long), where a line is a set of two coordinates.
 
 Additionally we save the color of the line for possible future gam implementations
 
 """
-
-from pieces import Piece
 
 
 class Board:
@@ -15,69 +14,120 @@ class Board:
         self.new_board = True
         self.last_piece = None
 
+    def line_exists(self, list_of_lines, test_line):
+        for line in list_of_lines:
+            if test_line == line:
+                return True
+        return False
+
+    def find_extended_lines(self, lines):
+        """
+        Function receives a list of lines (which are sets of coordinates)
+        function returns a list of the lines that can be created by extending two lines in the list
+        """
+        extended_lines = []
+        unchecked_lines = list(lines)
+        for line1 in lines:
+            unchecked_lines.remove(line1)
+            for line2 in unchecked_lines:
+                line1_list = list(line1)
+                line2_list = list(line2)
+                new_extended_line = None
+                if line1_list[0] == line2_list[0] and (
+                        line1_list[1][0] == line2_list[1][0] or line1_list[1][1] == line2_list[1][1]):
+                    new_extended_line = {line1_list[1], line2_list[1]}
+                if line1_list[0] == line2_list[1] and (
+                        line1_list[1][0] == line2_list[0][0] or line1_list[1][1] == line2_list[0][1]):
+                    new_extended_line = {line1_list[1], line2_list[0]}
+                if line1_list[1] == line2_list[0] and (
+                        line1_list[0][0] == line2_list[1][0] or line1_list[0][1] == line2_list[1][1]):
+                    new_extended_line = {line1_list[0], line2_list[1]}
+                if line1_list[1] == line2_list[1] and (
+                        line1_list[0][0] == line2_list[0][0] or line1_list[0][1] == line2_list[0][1]):
+                    new_extended_line = {line1_list[0], line2_list[0]}
+                if new_extended_line and not self.line_exists(extended_lines, new_extended_line):
+                    extended_lines.append(new_extended_line)
+        return extended_lines
+
     def piece_permutation(self, p: Piece, index=1):
         if not 1 <= index <= 8:
             print("Illegal permutation")
-        if index == 1:  # original
-            pass
-        if index == 2:
-            p.rotate_90_right()
-        if index == 3:
-            p.rotate_90_right()
-            p.rotate_90_right()
-        if index == 4:
-            p.rotate_90_right()
-            p.rotate_90_right()
-            p.rotate_90_right()
-        if index == 5:
-            p.x_axis_flip()
-        if index == 6:
-            p.x_axis_flip()
-            p.rotate_90_right()
-        if index == 7:
-            p.x_axis_flip()
-            p.rotate_90_right()
-            p.rotate_90_right()
-        if index == 8:
-            p.x_axis_flip()
-            p.rotate_90_right()
-            p.rotate_90_right()
-            p.rotate_90_right()
-
+        p.permutate((index - 1) % 4, (index - 1) / 4 == 1)
         return p
 
-    def check_piece_placement(self, p: Piece):
-        """
-         IMPORTANT NOTE: I defined it as legal to place the piece on the board without touching any other piece
-         if this isn't legal, another check needs to be made
-        """
+    def check_piece_placement(self, p: Piece, first_move: bool):
+
         # first we check that all coordinates in the piece are inside the board
         for line in p.shape:
             for (x, y) in line:
                 if not (0 <= x <= 32 and 0 <= y <= 32):
                     print("Illegal coordinates")
                     return False
-        # now we check that such a line doesn't already exist on the board
 
+        # now we check that such a line doesn't already exist on the board
+        # and that the new piece touches the some other piece on the board.
+        new_piece_touching = False
         for line in p.shape:
-            for board_line in self.line_list:
-                if board_line[0] == line:
+            new_coor_list = list(line)
+            for board_line in [bl[0] for bl in self.line_list]:
+                board_line_coor = list(board_line)
+                if board_line == line:
                     print("line already taken")
+                    return False
+                if board_line_coor[0] == new_coor_list[0] or board_line_coor[1] == new_coor_list[0] or \
+                        board_line_coor[0] == new_coor_list[1] or board_line_coor[1] == new_coor_list[1]:
+                    new_piece_touching = True
+
+        if first_move:
+            return True
+
+        if not new_piece_touching:
+            print("New Piece Doesn't touch any previous pieces")
+            return False
+
+        """
+            check that we don't cross another line already on the board.
+            We do this by creating "extended lines" which are pairs of original lines that extend each other on the same
+            axis. Then we check if these extended lines cross each other
+        """
+        for line in self.find_extended_lines(p.shape):
+            new_coor_list = list(line)
+            for board_line in self.find_extended_lines([bl[0] for bl in self.line_list]):
+                board_line_coor = list(board_line)
+
+                if (  # check if old line is between the new x values
+                        (new_coor_list[0][0] < board_line_coor[0][0] < new_coor_list[1][0] or
+                         new_coor_list[1][0] < board_line_coor[0][0] < new_coor_list[0][0]) and (
+                                # check if new line is between the old y values
+                                board_line_coor[0][1] < new_coor_list[0][1] < board_line_coor[1][1] or
+                                board_line_coor[1][1] < new_coor_list[0][1] < new_coor_list[0][1])
+                ) or (  # check if new line is between the old x values
+                        (board_line_coor[0][0] < new_coor_list[0][0] < board_line_coor[1][0] or
+                         board_line_coor[1][0] < new_coor_list[0][0] < board_line_coor[0][0]) and (
+                                # check if old line is between the new y values
+                                new_coor_list[0][1] < board_line_coor[0][1] < new_coor_list[1][1] or
+                                new_coor_list[1][1] < board_line_coor[0][1] < new_coor_list[0][1])):
+                    print("Piece Crosses a previous piece")
                     return False
         return True
 
-    def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15)):
+    def check_piece_placement_wrapper(self, piece_num, permutation_index, coordinates, first):
+        new_piece = Piece(piece_num)
+        new_piece = self.piece_permutation(new_piece, permutation_index)
+        new_piece.add_coordinates(coordinates[0], coordinates[1])
+        return self.check_piece_placement(new_piece, first)
+
+    def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15), first=False):
         if 1 <= piece_num <= 16 and 1 <= permutation_index <= 8:
             new_piece = Piece(piece_num)
             new_piece = self.piece_permutation(new_piece, permutation_index)
             new_piece.add_coordinates(coordinates[0], coordinates[1])
-            if self.check_piece_placement(new_piece):
+            if self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first):
                 for line in new_piece.shape:
                     self.line_list.append((line, player_num))
                 self.new_board = False
                 self.last_piece = new_piece
                 print("Piece added to board")
-                # print(self.line_list)
                 return True
             else:
                 print("Piece NOT added to board")

@@ -1,6 +1,6 @@
 
 """
-each player has a set of 16 pieces.
+Each Player has a set of 16 pieces.
 
 Each player also has a counter of how many moves he has left in the turn.
 The players turn ends when the number of moves left is zero
@@ -28,7 +28,7 @@ class Player:
         except KeyError as e:
             print("Piece does not exist for player")
 
-    def add_moves(self, new_moves=1):  # if we created more squares, we gwt more moves
+    def add_moves(self, new_moves=1):  # if we created more squares, we get more moves
         self.moves += new_moves
 
     def moves_left(self):
