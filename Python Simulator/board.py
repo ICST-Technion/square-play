@@ -10,9 +10,10 @@ Additionally we save the color of the line for possible future gam implementatio
 
 class Board:
     def __init__(self):
-        self.line_list = []
+        self.line_list = []  # list of tuples: [ ( {(a,b), (c,d)}, player_num, piece_id ), ...]
         self.new_board = True
         self.last_piece = None
+        self.piece_count = 0
 
     def line_exists(self, list_of_lines, test_line):
         for line in list_of_lines:
@@ -20,31 +21,40 @@ class Board:
                 return True
         return False
 
-    def find_extended_lines(self, lines):
+    def gen_piece_id(self):
+        self.piece_count += 1
+        return self.piece_count
+
+    def find_extended_lines(self, ided_lines):
         """
         Function receives a list of lines (which are sets of coordinates)
-        function returns a list of the lines that can be created by extending two lines in the list
+        an ided_line will be a (coordinate set, piece_id) tuple
+        function returns a list of the lines that can be created by extending two lines (from the same piece)
+        in a list
         """
         extended_lines = []
-        unchecked_lines = list(lines)
-        for line1 in lines:
+        unchecked_lines = list(ided_lines)
+        for line1 in ided_lines:
             unchecked_lines.remove(line1)
+            line1_list = list(line1[0])  # list of 2 coordinates
+            line1_id = line1[1]
             for line2 in unchecked_lines:
-                line1_list = list(line1)
-                line2_list = list(line2)
+                line2_list = list(line2[0])  # list of 2 coordinates
+                line2_id = line2[1]
                 new_extended_line = None
-                if line1_list[0] == line2_list[0] and (
-                        line1_list[1][0] == line2_list[1][0] or line1_list[1][1] == line2_list[1][1]):
-                    new_extended_line = {line1_list[1], line2_list[1]}
-                if line1_list[0] == line2_list[1] and (
-                        line1_list[1][0] == line2_list[0][0] or line1_list[1][1] == line2_list[0][1]):
-                    new_extended_line = {line1_list[1], line2_list[0]}
-                if line1_list[1] == line2_list[0] and (
-                        line1_list[0][0] == line2_list[1][0] or line1_list[0][1] == line2_list[1][1]):
-                    new_extended_line = {line1_list[0], line2_list[1]}
-                if line1_list[1] == line2_list[1] and (
-                        line1_list[0][0] == line2_list[0][0] or line1_list[0][1] == line2_list[0][1]):
-                    new_extended_line = {line1_list[0], line2_list[0]}
+                if line2_id == line1_id:  # only check if the lines are from the same piece
+                    if line1_list[0] == line2_list[0] and (
+                            line1_list[1][0] == line2_list[1][0] or line1_list[1][1] == line2_list[1][1]):
+                        new_extended_line = {line1_list[1], line2_list[1]}
+                    if line1_list[0] == line2_list[1] and (
+                            line1_list[1][0] == line2_list[0][0] or line1_list[1][1] == line2_list[0][1]):
+                        new_extended_line = {line1_list[1], line2_list[0]}
+                    if line1_list[1] == line2_list[0] and (
+                            line1_list[0][0] == line2_list[1][0] or line1_list[0][1] == line2_list[1][1]):
+                        new_extended_line = {line1_list[0], line2_list[1]}
+                    if line1_list[1] == line2_list[1] and (
+                            line1_list[0][0] == line2_list[0][0] or line1_list[0][1] == line2_list[0][1]):
+                        new_extended_line = {line1_list[0], line2_list[0]}
                 if new_extended_line and not self.line_exists(extended_lines, new_extended_line):
                     extended_lines.append(new_extended_line)
         return extended_lines
@@ -90,9 +100,9 @@ class Board:
             We do this by creating "extended lines" which are pairs of original lines that extend each other on the same
             axis. Then we check if these extended lines cross each other
         """
-        for line in self.find_extended_lines(p.shape):
+        for line in self.find_extended_lines([(line, -1) for line in p.shape]):  # -1 since from same piece
             new_coor_list = list(line)
-            for board_line in self.find_extended_lines([bl[0] for bl in self.line_list]):
+            for board_line in self.find_extended_lines([(bl[0], bl[2]) for bl in self.line_list]):
                 board_line_coor = list(board_line)
 
                 if (  # check if old line is between the new x values
@@ -123,8 +133,9 @@ class Board:
             new_piece = self.piece_permutation(new_piece, permutation_index)
             new_piece.add_coordinates(coordinates[0], coordinates[1])
             if self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first):
+                new_id = self.gen_piece_id()
                 for line in new_piece.shape:
-                    self.line_list.append((line, player_num))
+                    self.line_list.append((line, player_num, new_id))
                 self.new_board = False
                 self.last_piece = new_piece
                 print("Piece added to board")

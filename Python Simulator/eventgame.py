@@ -12,13 +12,16 @@ class EventGame:
             self.players = players
         self.started = False
         # TODO: check playing_players is a deep enough copy
-        self.playing_players = list(players)
+
+        self.playing_players = []
+        for index, player in enumerate(self.players):
+            self.playing_players.append(index + 1)
+
         self.game_board = Board()
         self.winners = None
-        self.turn = len(players)
+        self.curr_player_num = len(players)  # the player number who's turn it is
         self.turns_left = -1
         self.game_finished = False
-        print(self.players, self.turn)
 
     def start_game(self, piece_num, permutation):
         if self.game_finished:
@@ -33,7 +36,10 @@ class EventGame:
             if curr_player.check_piece(piece_num) and self.game_board.add_piece(len(self.players), piece_num,
                                                                                 permutation, (15, 15), True):
                 curr_player.remove_piece(piece_num)
-                self.turn = ((self.playing_players.index(curr_player) + 1) % len(self.playing_players)) + 1
+                if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
+                    self.curr_player_num = self.playing_players[0]
+                else:
+                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
                 self.started = True
                 return 1
             else:
@@ -59,15 +65,15 @@ class EventGame:
             print("Invalid Event, game hasn't started")
             return -1
 
-        if player_num != self.turn:
-            print(f"Wrong player, player {self.turn + 1} needs to play")
+        if player_num != self.curr_player_num:
+            print(f"Wrong player, player {self.curr_player_num} needs to play")
             return -1
 
         try:
             curr_player = self.players[player_num - 1]
         except IndexError:
             return -1
-        if curr_player not in self.playing_players:
+        if player_num not in self.playing_players:
             print("Player has already won or is not playing")
             return -1
 
@@ -84,25 +90,36 @@ class EventGame:
 
             if curr_player.is_player_finished():
                 print("Final Round for players with less turns")
-                self.turns_left = len(self.playing_players) - self.playing_players.index(curr_player) + 1
+                self.turns_left = len(self.playing_players) - self.playing_players.index(self.curr_player_num) + 1
                 self.winners.append(curr_player)
-                self.turn = ((self.playing_players.index(curr_player) + 1) % len(self.playing_players)) + 1
-                self.playing_players.remove(curr_player)
+                prev_turn = self.curr_player_num
+                if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
+                    self.curr_player_num = self.playing_players[0]
+                else:
+                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
+
+                self.playing_players.remove(prev_turn)
                 if self.__check_game_finished() == 5:
                     return 5  # 5 means game is finished
                 return 3  # 3 means this is the final round
 
             if curr_player.moves_left() < 1:  # end of turn for player
-                self.turn = ((self.playing_players.index(curr_player) + 1) % len(self.playing_players)) + 1
-                if self.turns_left != -1:
+
+                if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
+                    self.curr_player_num = self.playing_players[0]
+                else:
+                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
+
+                if self.turns_left != -1:  # relevant for the final round
                     self.turns_left -= 1
+
                 if self.__check_game_finished() == 5:
                     return 5  # 5 means game is finished
                 return 2  # 2 means player turn has ended
             return 1  # 1 means player still has moves left
 
     def __check_game_finished(self):
-        if self.turns_left == 0:
+        if self.turns_left == 0 or len(self.playing_players) == 0:
             print(f"Game finished, winners are: {self.winners}")
             self.game_finished = True
             return 5  # 5 means game is finished
@@ -110,6 +127,12 @@ class EventGame:
 
     def get_board(self):
         return self.game_board
+
+    def get_whos_turn(self):
+        return self.curr_player_num
+
+    def get_moves_left(self):
+        return self.players[self.curr_player_num - 1]
 
     def compare_board(self, unity_board):
         return unity_board and self.started
