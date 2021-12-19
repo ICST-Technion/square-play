@@ -96,7 +96,7 @@ class EventGame:
                 if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
                     self.curr_player_num = self.playing_players[0]
                 else:
-                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
+                    self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
 
                 self.playing_players.remove(prev_turn)
                 if self.__check_game_finished() == 5:
@@ -108,7 +108,7 @@ class EventGame:
                 if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
                     self.curr_player_num = self.playing_players[0]
                 else:
-                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
+                    self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
 
                 if self.turns_left != -1:  # relevant for the final round
                     self.turns_left -= 1
@@ -136,3 +136,8 @@ class EventGame:
 
     def compare_board(self, unity_board):
         return unity_board and self.started
+
+    def get_player_pieces(self, player_num):
+        if 0 < player_num < len(self.players):
+            return self.players[player_num - 1].pieces
+        return -1

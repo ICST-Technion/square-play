@@ -26,3 +26,4 @@ if __name__ == '__main__':
     test_Game = EventGame(player_list)
     test_Game.start_game(15, 1)
     test_Game.move(1, 15, 2, 15, 13)
+    test_Game.move(1, 13, 7,  13, 13)

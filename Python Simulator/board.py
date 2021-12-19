@@ -129,10 +129,11 @@ class Board:
 
     def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15), first=False):
         if 1 <= piece_num <= 16 and 1 <= permutation_index <= 8:
-            new_piece = Piece(piece_num)
-            new_piece = self.piece_permutation(new_piece, permutation_index)
-            new_piece.add_coordinates(coordinates[0], coordinates[1])
+
             if self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first):
+                new_piece = Piece(piece_num)
+                new_piece = self.piece_permutation(new_piece, permutation_index)
+                new_piece.add_coordinates(coordinates[0], coordinates[1])
                 new_id = self.gen_piece_id()
                 for line in new_piece.shape:
                     self.line_list.append((line, player_num, new_id))
