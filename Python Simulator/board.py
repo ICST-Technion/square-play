@@ -233,16 +233,16 @@ class Board:
         root.title('Square Play Board')
         root.geometry("500x500")
 
-        board = Canvas(root, width=1000, height=1000, bg="white")
+        board = Canvas(root, width=1000, height=1000, bg="grey")
         board.pack(pady=20)
         for shape in self.shapes:
-            color = "green" if shape[1] == 1 else "blue" if shape[1] == 2 else "yellow" if shape[1] == 3 else "red"
+            color = "green" if shape[1] == 1 else "blue" if shape[1] == 2 else "black" if shape[1] == 3 else "red"
             needed_shape = get_needed_coords(shape[0])
             for line in needed_shape:
                 iterator = iter(line)
                 point1 = next(iterator, None)
                 point2 = next(iterator, None)
-                board.create_line(point1[0] * 25, point1[1] * 25, point2[0] * 25, point2[1] * 25, fill=color)
+                board.create_line(point1[0] * 30, point1[1] * 30, point2[0] * 30, point2[1] * 30, fill=color, width=5)
 
         root.mainloop()
 
