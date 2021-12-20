@@ -62,7 +62,7 @@ class Board:
     def piece_permutation(self, p: Piece, index=1):
         if not 1 <= index <= 8:
             print("Illegal permutation")
-        p.permutate((index - 1) % 4, (index - 1) / 4 == 1)
+        p.permutate((index - 1) % 4, (index - 1) // 4 == 1)
         return p
 
     def check_piece_placement(self, p: Piece, first_move: bool):
