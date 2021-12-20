@@ -12,7 +12,7 @@
  each player has 16 such shapes, and there are upto 4 players.
  The real max possible length/height is 16*4*2 = 128, but such a setup makes no sense according to each
  player's motivations.
- On the other end, the optimal setup would be a square grid of size: 16 * 16 since there are upto 256 squares
+ On the other end, the optimal setup would be a square grid of size: 12 * 12 since there are upto 128 squares
  on the board.
 
 Since good gameplay should be closer to an optimal setup,
