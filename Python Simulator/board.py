@@ -1,10 +1,21 @@
 from pieces import Piece
+from tkinter import *
 
 """
 The Board is just a list of a lines (one unit long), where a line is a set of two coordinates.
 
 Additionally we save the color of the line for possible future gam implementations
 
+"""
+
+
+
+"""
+def get_symbol_by_direction(direction):
+    if direction[0] == 0 and (direction[1] == 1 or direction[1] == -1):  # right or left
+        return "-"
+    elif (direction[0] == 1 or direction[0] == -1) and direction[1] == 0:    # up or down
+        return "|"
 """
 
 
@@ -167,3 +178,22 @@ class Board:
                 new_sq += 1
 
         return new_sq
+
+
+    def print_board(self):
+        root = Tk()
+        root.title('Square Play Board')
+        root.geometry("500x500")
+
+        board = Canvas(root, width=1000, height=1000, bg="white")
+        board.pack(pady=20)
+        for line in self.line_list:
+            iterator = iter(line[0])
+            point1 = next(iterator, None)
+            point2 = next(iterator, None)
+            board.create_line(point1[0] * 25, point1[1] * 25, point2[0] * 25, point2[1] * 25, fill="black")
+
+        root.mainloop()
+
+
+

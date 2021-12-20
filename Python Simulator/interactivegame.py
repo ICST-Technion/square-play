@@ -30,6 +30,7 @@ class InteractiveGame:
                 pr = int(pr)
                 if player.check_piece(pn) and self.game_board.add_piece(len(self.players), pn, pr, (15, 15), True):
                     player.remove_piece(pn)
+                    self.game_board.print_board()
                     break
                 else:
                     print("Try again")
@@ -50,6 +51,7 @@ class InteractiveGame:
                     if player.check_piece(pn) and self.game_board.add_piece(count + 1, pn, pr, coordinates):
                         player.remove_piece(pn)
                         new_squares = self.game_board.new_squares()
+                        self.game_board.print_board()
 
                         if new_squares != 0:
                             player.add_moves(new_squares - 1)
