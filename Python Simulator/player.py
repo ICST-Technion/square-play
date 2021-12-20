@@ -15,6 +15,7 @@ class Player:
         self.moves = 0
         self.turns_played = 0
 
+
     def check_piece(self, num):
         if num in self.pieces:
             return True

@@ -32,6 +32,7 @@ class EventGame:
             return -1
 
         curr_player = self.players[-1]
+        curr_player.add_moves()
         if not self.started:
             if curr_player.check_piece(piece_num) and self.game_board.add_piece(len(self.players), piece_num,
                                                                                 permutation, (15, 15), True):
