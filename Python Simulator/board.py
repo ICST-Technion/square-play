@@ -8,8 +8,6 @@ Additionally we save the color of the line for possible future gam implementatio
 
 """
 
-
-
 """
 def get_symbol_by_direction(direction):
     if direction[0] == 0 and (direction[1] == 1 or direction[1] == -1):  # right or left
@@ -17,6 +15,7 @@ def get_symbol_by_direction(direction):
     elif (direction[0] == 1 or direction[0] == -1) and direction[1] == 0:    # up or down
         return "|"
 """
+
 
 def get_needed_coords(shape):
     first_line = shape[0]
@@ -45,8 +44,10 @@ def get_needed_coords(shape):
         iterator = iter(line)
         point1 = next(iterator, None)
         point2 = next(iterator, None)
-        new_point1 = (point1[0],point1[1]-max_diff) if point1[1] == max_y else (point1[0],point1[1]+max_diff) if point1[1] == min_y else (point1[0],point1[1])
-        new_point2 = (point2[0],point2[1]-max_diff) if point2[1] == max_y else (point2[0],point2[1]+max_diff) if point2[1] == min_y else (point2[0],point2[1])
+        new_point1 = (point1[0], point1[1] - max_diff) if point1[1] == max_y else (point1[0], point1[1] + max_diff) if \
+            point1[1] == min_y else (point1[0], point1[1])
+        new_point2 = (point2[0], point2[1] - max_diff) if point2[1] == max_y else (point2[0], point2[1] + max_diff) if \
+            point2[1] == min_y else (point2[0], point2[1])
         new_line = {new_point1, new_point2}
         needed_shape.append(new_line)
 
@@ -137,6 +138,10 @@ class Board:
         if first_move:
             return True
 
+        if not self.validate_new_squares(p):
+            print("No new square added")
+            return False
+
         if not new_piece_touching:
             print("New Piece Doesn't touch any previous pieces")
             return False
@@ -194,13 +199,8 @@ class Board:
             print("Illegal piece number or permutation")
         return False
 
-    def new_squares(self):
+    def inner_squares_counter(self, possible_squares, board_lines):
         new_sq = 0
-        if type(self.last_piece) == Piece and self.last_piece is not None:
-            possible_squares = self.last_piece.get_possible_squares()
-        else:
-            return new_sq
-
         for sq in possible_squares:
             # looping all possible squares
             edge_counter = 0
@@ -208,7 +208,7 @@ class Board:
             perm_new_line = False
             for sq_line in sq:
                 # looping over every line in a square
-                for board_line in self.line_list:
+                for board_line in board_lines:
                     # for every line in square we check if it exists on the board
                     if board_line[0] == sq_line:
                         edge_counter += 1
@@ -227,6 +227,18 @@ class Board:
 
         return new_sq
 
+    def validate_new_squares(self, p: Piece):  # counts new squares before a move was made
+        future_line_list = self.line_list + [(shape_line, -1, -1) for shape_line in p.shape]
+        possible_squares = p.get_possible_squares()
+        return self.inner_squares_counter(possible_squares, future_line_list) != 0
+
+    def count_new_squares(self):  # counts new squares after a move was made
+        new_sq = 0
+        if type(self.last_piece) == Piece and self.last_piece is not None:
+            possible_squares = self.last_piece.get_possible_squares()
+        else:
+            return new_sq
+        return self.inner_squares_counter(possible_squares, self.line_list)
 
     def print_board(self):
         root = Tk()
@@ -245,6 +257,3 @@ class Board:
                 board.create_line(point1[0] * 30, point1[1] * 30, point2[0] * 30, point2[1] * 30, fill=color, width=5)
 
         root.mainloop()
-
-
-

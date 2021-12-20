@@ -20,7 +20,7 @@ class EventGame:
         self.game_board = Board()
         self.winners = None
         self.curr_player_num = len(players)  # the player number who's turn it is
-        self.turns_left = -1
+        self.final_round_cnt = -1
         self.game_finished = False
 
     def start_game(self, piece_num, permutation):
@@ -56,7 +56,8 @@ class EventGame:
                                                                                                     (x_coor, y_coor),
                                                                                                     not self.started)
 
-    def move(self, player_num, piece_num, permutation, x_coor, y_coor):
+    def metadata_checks(self, player_num):
+
         if self.game_finished:
             print("Error, Game has already Finished")
             return -1
@@ -69,18 +70,46 @@ class EventGame:
             print(f"Wrong player, player {self.curr_player_num} needs to play")
             return -1
 
+        if player_num not in self.playing_players:
+            print("Player has already won or is not playing")
+            return -1
+
+        return 0
+
+    def pass_turn(self, player_num):
+        # if this player chooses to pass his turn
+        if self.metadata_checks(player_num) == -1:
+            return -1
         try:
             curr_player = self.players[player_num - 1]
         except IndexError:
             return -1
-        if player_num not in self.playing_players:
-            print("Player has already won or is not playing")
+        curr_player.moves_left = 0
+
+        if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
+            self.curr_player_num = self.playing_players[0]
+        else:
+            self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
+        return 0
+
+    def move(self, player_num, piece_num, permutation, x_coor, y_coor):
+
+        if self.metadata_checks(player_num) == -1:
+            return -1
+
+        if player_num != self.curr_player_num:
+            print(f"Wrong player, player {self.curr_player_num} needs to play")
+            return -1
+
+        try:
+            curr_player = self.players[player_num - 1]
+        except IndexError:
             return -1
 
         if curr_player.check_piece(piece_num) and self.game_board.add_piece(player_num, piece_num, permutation,
                                                                             (x_coor, y_coor)):
             curr_player.remove_piece(piece_num)
-            new_squares = self.game_board.new_squares()
+            new_squares = self.game_board.count_new_squares()
 
             if new_squares != 0:
                 curr_player.add_moves(new_squares - 1)
@@ -90,13 +119,14 @@ class EventGame:
 
             if curr_player.is_player_finished():
                 print("Final Round for players with less turns")
-                self.turns_left = len(self.playing_players) - self.playing_players.index(self.curr_player_num) + 1
+                self.final_round_cnt = len(self.playing_players) - self.playing_players.index(self.curr_player_num) + 1
                 self.winners.append(curr_player)
                 prev_turn = self.curr_player_num
                 if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
                     self.curr_player_num = self.playing_players[0]
                 else:
                     self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
+                self.players[self.curr_player_num - 1].add_moves()
 
                 self.playing_players.remove(prev_turn)
                 if self.__check_game_finished() == 5:
@@ -109,9 +139,10 @@ class EventGame:
                     self.curr_player_num = self.playing_players[0]
                 else:
                     self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
+                self.players[self.curr_player_num - 1].add_moves()
 
-                if self.turns_left != -1:  # relevant for the final round
-                    self.turns_left -= 1
+                if self.final_round_cnt != -1:  # relevant for the final round
+                    self.final_round_cnt -= 1
 
                 if self.__check_game_finished() == 5:
                     return 5  # 5 means game is finished

@@ -50,7 +50,7 @@ class InteractiveGame:
 
                     if player.check_piece(pn) and self.game_board.add_piece(count + 1, pn, pr, coordinates):
                         player.remove_piece(pn)
-                        new_squares = self.game_board.new_squares()
+                        new_squares = self.game_board.count_new_squares()
                         self.game_board.print_board()
 
                         if new_squares != 0:
