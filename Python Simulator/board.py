@@ -18,44 +18,9 @@ def get_symbol_by_direction(direction):
         return "|"
 """
 
-def get_needed_coords(shape):
-    first_line = shape[0]
-    iterator = iter(first_line)
-    point1 = next(iterator, None)
-    point2 = next(iterator, None)
-    min_y = point1[1]
-    max_y = point1[1]
-
-    for line in shape:
-        iterator = iter(line)
-        point1 = next(iterator, None)
-        point2 = next(iterator, None)
-        if point1[1] < min_y:
-            min_y = point1[1]
-        if point2[1] < min_y:
-            min_y = point2[1]
-        if point1[1] > max_y:
-            max_y = point1[1]
-        if point2[1] > max_y:
-            max_y = point2[1]
-
-    max_diff = max_y - min_y
-    needed_shape = []
-    for line in shape:
-        iterator = iter(line)
-        point1 = next(iterator, None)
-        point2 = next(iterator, None)
-        new_point1 = (point1[0],point1[1]-max_diff) if point1[1] == max_y else (point1[0],point1[1]+max_diff) if point1[1] == min_y else (point1[0],point1[1])
-        new_point2 = (point2[0],point2[1]-max_diff) if point2[1] == max_y else (point2[0],point2[1]+max_diff) if point2[1] == min_y else (point2[0],point2[1])
-        new_line = {new_point1, new_point2}
-        needed_shape.append(new_line)
-
-    return needed_shape
-
 
 class Board:
     def __init__(self):
-        self.shapes = []
         self.line_list = []
         self.new_board = True
         self.last_piece = None
@@ -181,7 +146,6 @@ class Board:
                 new_piece = self.piece_permutation(new_piece, permutation_index)
                 new_piece.add_coordinates(coordinates[0], coordinates[1])
                 new_id = self.gen_piece_id()
-                self.shapes.append((new_piece.shape, player_num))
                 for line in new_piece.shape:
                     self.line_list.append((line, player_num, new_id))
                 self.new_board = False
@@ -235,14 +199,12 @@ class Board:
 
         board = Canvas(root, width=1000, height=1000, bg="grey")
         board.pack(pady=20)
-        for shape in self.shapes:
-            color = "green" if shape[1] == 1 else "blue" if shape[1] == 2 else "black" if shape[1] == 3 else "red"
-            needed_shape = get_needed_coords(shape[0])
-            for line in needed_shape:
-                iterator = iter(line)
-                point1 = next(iterator, None)
-                point2 = next(iterator, None)
-                board.create_line(point1[0] * 30, point1[1] * 30, point2[0] * 30, point2[1] * 30, fill=color, width=5)
+        for line in self.line_list:
+            color = "green" if line[1] == 1 else "blue" if line[1] == 2 else "black" if line[1] == 3 else "red"
+            iterator = iter(line[0])
+            point1 = next(iterator, None)
+            point2 = next(iterator, None)
+            board.create_line(point1[0] * 30, board.winfo_reqheight() - point1[1] * 30, point2[0] * 30, board.winfo_reqheight() - point2[1] * 30, fill=color, width=5)
 
         root.mainloop()
 
