@@ -42,6 +42,7 @@ class EventGame:
                 else:
                     self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
                 self.started = True
+                self.players[self.curr_player_num - 1].add_moves()
                 return 1
             else:
                 return -1
@@ -151,7 +152,7 @@ class EventGame:
             return 1  # 1 means player still has moves left
 
     def __check_game_finished(self):
-        if self.turns_left == 0 or len(self.playing_players) == 0:
+        if self.final_round_cnt == 0 or len(self.playing_players) == 0:
             print(f"Game finished, winners are: {self.winners}")
             self.game_finished = True
             return 5  # 5 means game is finished

@@ -23,7 +23,7 @@ class InteractiveGame:
             player = self.players[-1]
             # so that he will always have an extra turn at the end if someone else wins, since
             # the for loop for the turns begins at the first player
-            curr_player.add_moves()
+            player.add_moves()
             if self.game_board.new_board:
                 print(f"{player.name}'s Turn, choose piece and permutation, placement is predefined")
                 pn, pr = input("Syntax is: <piece num: 1-16> <permutation: 1-8>:\n").split()
