@@ -119,7 +119,7 @@ class EventGame:
 
             if curr_player.is_player_finished():
                 print("Final Round for players with less turns")
-                self.final_round_cnt = len(self.playing_players) - self.playing_players.index(self.curr_player_num) + 1
+                self.final_round_cnt = len(self.playing_players) - self.playing_players.index(self.curr_player_num) - 1
                 self.winners.append(curr_player)
                 prev_turn = self.curr_player_num
                 if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
