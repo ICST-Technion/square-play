@@ -93,7 +93,7 @@ class Piece:
 
         if piece_num == 16:  # this piece is shaped like a P without middle line. Zero point is the top right corner
             self.shape = [{(0, 0), (-1, 0)}, {(0, 0), (0, -1)},
-                          {(-1, -1), (0, -1)}, {(-1, -2), (-1, -1)}]
+                          {(-1, -1), (-1, 0)}, {(-1, -2), (-1, -1)}]
 
     def rotate_90_right(self):
         # first we switch the x and y axis, and then flip new y axis sign
