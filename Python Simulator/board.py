@@ -194,7 +194,7 @@ class Board:
             print("Illegal piece number or permutation")
         return False
 
-    def inner_squares_counter(self, possible_squares, board_lines):
+    def inner_squares_counter(self, possible_squares, board_lines, last_piece: Piece):
         new_sq = 0
         for sq in possible_squares:
             # looping all possible squares
@@ -209,7 +209,7 @@ class Board:
                         edge_counter += 1
                         new_line = False
                         # if an edge was found we need to see if it was there before the newest piece was placed
-                        for piece_line in self.last_piece.shape:
+                        for piece_line in last_piece.shape:
                             if sq_line == piece_line:
                                 new_line = True
                                 perm_new_line = True
@@ -225,7 +225,7 @@ class Board:
     def validate_new_squares(self, p: Piece):  # counts new squares before a move was made
         future_line_list = self.line_list + [(shape_line, -1, -1) for shape_line in p.shape]
         possible_squares = p.get_possible_squares()
-        return self.inner_squares_counter(possible_squares, future_line_list) != 0
+        return self.inner_squares_counter(possible_squares, future_line_list, p) != 0
 
     def count_new_squares(self):  # counts new squares after a move was made
         new_sq = 0
@@ -233,7 +233,7 @@ class Board:
             possible_squares = self.last_piece.get_possible_squares()
         else:
             return new_sq
-        return self.inner_squares_counter(possible_squares, self.line_list)
+        return self.inner_squares_counter(possible_squares, self.line_list, self.last_piece)
 
     def print_board(self):
         root = Tk()

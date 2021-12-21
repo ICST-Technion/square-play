@@ -4,7 +4,6 @@ from player import Player
 
 if __name__ == '__main__':
     # ---------------------- INTERACTIVE GAME ----------------------
-    """
     print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
     while not 2 <= number_of_players <= 4:
@@ -14,7 +13,6 @@ if __name__ == '__main__':
         player_list.append(Player(f"Player_{i + 1}"))
     test_Game = InteractiveGame(player_list)
     test_Game.gameplay()
-    """
     # ---------------------- EVENT GAME ----------------------
     print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
