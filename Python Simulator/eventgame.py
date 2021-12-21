@@ -11,14 +11,12 @@ class EventGame:
         else:
             self.players = players
         self.started = False
-        # TODO: check playing_players is a deep enough copy
-
         self.playing_players = []
         for index, player in enumerate(self.players):
             self.playing_players.append(index + 1)
 
         self.game_board = Board()
-        self.winners = None
+        self.winners = []
         self.curr_player_num = len(players)  # the player number who's turn it is
         self.final_round_cnt = -1
         self.game_finished = False
