@@ -1,5 +1,6 @@
 from player import Player
 from board import Board
+from eventgame import EventGame
 
 
 class InteractiveGame:
@@ -10,70 +11,64 @@ class InteractiveGame:
                 self.players.append(Player(f"Player_{i + 1}"))
         else:
             self.players = players
-        self.game_board = Board()
-        self.winners = None
+        self.event_g = EventGame(players)
 
     def gameplay(self):
 
         if not self.players:
             print("Game with no players, finished")
             return
-
-        while True:
-            player = self.players[-1]
-            # so that he will always have an extra turn at the end if someone else wins, since
-            # the for loop for the turns begins at the first player
-            player.add_moves()
-            if self.game_board.new_board:
-                print(f"{player.name}'s Turn, choose piece and permutation, placement is predefined")
+        ret = -1
+        file_name = input("Choose output file name\n").split()
+        while ret == -1:
+            f = open(f"./tests/{file_name[0]}.txt", "a")
+            print(
+                f"Player_{self.event_g.curr_player_num}'s Turn, choose piece and permutation, placement is "
+                f"predefined")
+            try:
                 pn, pr = input("Syntax is: <piece num: 1-16> <permutation: 1-8>:\n").split()
                 pn = int(pn)
                 pr = int(pr)
-                if player.check_piece(pn) and self.game_board.add_piece(len(self.players), pn, pr, (15, 15), True):
-                    player.remove_piece(pn)
-                    self.game_board.print_board()
-                    break
+                ret = self.event_g.start_game(pn, pr)
+                prev_piece_lines = [line for line in self.event_g.game_board.last_piece.shape]
+                pr_str = ""
+                for (a, b), (c, d) in prev_piece_lines:
+                    pr_str += f"{a},{b}-{c},{d}//"
+                pr_str = pr_str[:-2]
+                if ret == -1:
+                    f.write(f"1||{pn},{pr}|| ||{ret}\n")
                 else:
-                    print("Try again")
+                    f.write(f"1||{pn},{pr}||{pr_str}||{ret}\n")
+            finally:
+                print("")
+                # pass
+            f.close()
 
-        while True:
-            for count, player in enumerate(self.players):
-                # for loop for player turns
-                # each player has one move at the start of each turn
-                player.add_moves()
-                while True:
-                    print(f"{player.name}'s Move, choose piece, permutation, placement")
-                    pn, pr, x, y = input("Syntax is: <piece num: 1-16> <permutation: 1-8> <X coordinate : 1-32> <Y "
-                                         "coordinate 1-32)>:\n").split()
-                    pn = int(pn)
-                    pr = int(pr)
-                    coordinates = (int(x), int(y))
-
-                    if player.check_piece(pn) and self.game_board.add_piece(count + 1, pn, pr, coordinates):
-                        player.remove_piece(pn)
-                        new_squares = self.game_board.count_new_squares()
-                        self.game_board.print_board()
-
-                        if new_squares != 0:
-                            player.add_moves(new_squares - 1)
-                            print(
-                                f"{player.name} got {new_squares - 1} more moves with a total of {player.moves_left()}"
-                                f" left")
-
-                        if player.is_player_finished():
-                            print("Final Round for players with less turns")
-                            self.winners.append(player)
-                            break
-
-                        if player.moves_left() < 1:  # end of turn for player
-                            break
-            if len(self.winners) != 0:
-                break
-
-        print("Congratulations, the winner/s are: ")
-        num_turns = 0
-        for player in self.winners:
-            num_turns = player.turns_played
-            print(player.name)
-        print(f"Which finished the game in {num_turns} Turns")
+        while ret != 5:
+            f = open(f"./tests/{file_name[0]}.txt", "a+")
+            print(f"Player_{self.event_g.curr_player_num}'s Move, choose piece, permutation, placement")
+            pm = input("Pass/Turn: 0/1 : ")
+            pm = int(pm)
+            if pm == 0:
+                ret = self.event_g.pass_turn(self.event_g.curr_player_num)
+                f.write(f"0||{self.event_g.curr_player_num}|| ||{ret}\n")
+            else:
+                num, pn, pr, x, y = input(
+                    "Syntax is: <Player Num> <piece num: 1-16> <permutation: 1-8> <X coordinate : 1-32> <Y "
+                    "coordinate 1-32)>:\n").split()
+                num = int(num)
+                pn = int(pn)
+                pr = int(pr)
+                coordinates = (int(x), int(y))
+                ret = self.event_g.move(num, pn, pr, coordinates[0], coordinates[1])
+                prev_piece_lines = [line for line in self.event_g.game_board.last_piece.shape]
+                pr_str = ""
+                for (a, b), (c, d) in prev_piece_lines:
+                    pr_str += f"{a},{b}-{c},{d}//"
+                pr_str = pr_str[:-2]
+                if ret == -1:
+                    f.write(f"1||{num},{pn},{pr},{coordinates[0]},{coordinates[1]}|| ||{ret}\n")
+                else:
+                    f.write(f"1||{num},{pn},{pr},{coordinates[0]},{coordinates[1]}||{pr_str}||{ret}\n")
+                f.close()
         return

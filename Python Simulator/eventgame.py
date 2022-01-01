@@ -78,6 +78,8 @@ class EventGame:
 
     def pass_turn(self, player_num):
         # if this player chooses to pass his turn
+        if not self.started:
+            print("Can't pass first turn of the game")
         if self.metadata_checks(player_num) == -1:
             return -1
         try:

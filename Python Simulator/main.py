@@ -14,6 +14,7 @@ if __name__ == '__main__':
     test_Game = InteractiveGame(player_list)
     test_Game.gameplay()
     # ---------------------- EVENT GAME ----------------------
+    """
     print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
     while not 2 <= number_of_players <= 4:
@@ -24,3 +25,4 @@ if __name__ == '__main__':
     test_Game = EventGame(player_list)
     test_Game.start_game(13, 4)
     test_Game.move(1, 9, 1, 16, 16)
+    """
