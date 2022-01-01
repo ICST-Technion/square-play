@@ -148,6 +148,7 @@ class EventGame:
                     return 5  # 5 means game is finished
                 return 2  # 2 means player turn has ended
             return 1  # 1 means player still has moves left
+        return -1
 
     def __check_game_finished(self):
         if self.final_round_cnt == 0 or len(self.playing_players) == 0:
