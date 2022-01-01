@@ -84,12 +84,18 @@ class EventGame:
             curr_player = self.players[player_num - 1]
         except IndexError:
             return -1
-        curr_player.moves_left = 0
+        curr_player.moves = 0
 
         if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
             self.curr_player_num = self.playing_players[0]
         else:
             self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
+        self.players[self.curr_player_num - 1].add_moves()
+        print("passed turn to next player")
+        if self.final_round_cnt != -1:  # relevant for the final round
+            self.final_round_cnt -= 1
+        if self.__check_game_finished() == 5:
+            return 5
         return 0
 
     def move(self, player_num, piece_num, permutation, x_coor, y_coor):
@@ -113,9 +119,7 @@ class EventGame:
 
             if new_squares != 0:
                 curr_player.add_moves(new_squares - 1)
-                print(
-                    f"{curr_player.name} got {new_squares - 1} more moves with a total of {curr_player.moves_left()} "
-                    f"left")
+                print(f"{curr_player.name} got {new_squares - 1} more moves with a total of {curr_player.moves_left()} left")
 
             if curr_player.is_player_finished():
                 print("Final Round for players with less turns")
@@ -152,7 +156,7 @@ class EventGame:
 
     def __check_game_finished(self):
         if self.final_round_cnt == 0 or len(self.playing_players) == 0:
-            print(f"Game finished, winners are: {self.winners}")
+            print(f"Game finished, winners are: {[p.name for p in self.winners]}")
             self.game_finished = True
             return 5  # 5 means game is finished
         return 0

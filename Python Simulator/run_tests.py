@@ -27,7 +27,9 @@ def parse_move(move):
     # create move parameters list
     move_list[1] = list(map(lambda param: int(param), move_list[1].split(",")))
     # split result to lines
-    if(move_list[2]!=" "):
+    if(move_list[2]=="" or move_list[2]==" "):
+      move_list[2]=[]
+    else:
       move_list[2] = move_list[2].split("//")
       for i in range(len(move_list[2])):
         #split each line to 2 points
@@ -38,8 +40,6 @@ def parse_move(move):
         #set second point to be a tuple of 2 coordinates
         second_point = move_list[2][i][1].split(",")
         move_list[2][i][1] = (int(second_point[0]), int(second_point[1]))
-    else:
-      move_list[2]=[]
   #set expected status code
   move_list[3] = int(move_list[3])
   #so now a move is described by a list of:
