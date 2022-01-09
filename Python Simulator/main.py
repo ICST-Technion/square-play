@@ -40,31 +40,38 @@ if __name__ == '__main__':
     s.listen(1)
     game_started = False
     remote_game = None
+    to_send = float(-999)
     while True:
         try:
             c, addr = s.accept()
             bytes_received = c.recv(4000)
-            if remote_game:
-                array_received = np.frombuffer(bytes_received, dtype=np.float32)
-            else:
-                array_received = np.frombuffer(bytes_received, dtype=np.string_)
-            # extract the relevant data for the move function, i'll send you the format later
-            if game_started:
-                move_output = remote_game.move(array_received[0], array_received[1], array_received[2],
-                                               array_received[3], array_received[4])
-            elif remote_game:
-                move_output = remote_game.start_game(array_received[0], array_received[1])
-                if move_output != -1:
-                    game_started = True
-            else:
-                # array should hold a player list
+            action_code = np.frombuffer(bytes_received, dtype=np.float32)
+
+            if action_code[0] == 0 and remote_game is None:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=str)
+                players_names = array_received[0].split(',')
                 players = []
                 for name in array_received:
                     players.append(Player(name))
                 remote_game = EventGame(players)
-                move_output = 1
+                to_send = 1
 
-            bytes_to_send = struct.pack('%sf' % len(move_output), *move_output)
+            if action_code[0] == 1 and remote_game:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=np.float32)
+                to_send = float(remote_game.start_game(array_received[0], array_received[1]))
+                if to_send != -1:
+                    game_started = True
+
+            if action_code[0] == 2 and game_started:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=np.float32)
+                array_received = np.frombuffer(bytes_received, dtype=np.string_)
+                to_send = float(remote_game.move(array_received[0], array_received[1], array_received[2],
+                                                 array_received[3], array_received[4]))
+
+            bytes_to_send = struct.pack("%f", to_send)
             c.sendall(bytes_to_send)
             c.close()
 
