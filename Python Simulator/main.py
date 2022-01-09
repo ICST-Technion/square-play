@@ -44,16 +44,25 @@ if __name__ == '__main__':
         try:
             c, addr = s.accept()
             bytes_received = c.recv(4000)
-            array_received = np.frombuffer(bytes_received, dtype=np.float32)
+            if remote_game:
+                array_received = np.frombuffer(bytes_received, dtype=np.float32)
+            else:
+                array_received = np.frombuffer(bytes_received, dtype=np.string_)
             # extract the relevant data for the move function, i'll send you the format later
             if game_started:
-                move_output = remote_game.move(array_received)
+                move_output = remote_game.move(array_received[0], array_received[1], array_received[2],
+                                               array_received[3], array_received[4])
             elif remote_game:
                 move_output = remote_game.start_game(array_received[0], array_received[1])
+                if move_output != -1:
+                    game_started = True
             else:
                 # array should hold a player list
-                players = array_received
+                players = []
+                for name in array_received:
+                    players.append(Player(name))
                 remote_game = EventGame(players)
+                move_output = 1
 
             bytes_to_send = struct.pack('%sf' % len(move_output), *move_output)
             c.sendall(bytes_to_send)
