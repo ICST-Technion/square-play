@@ -3,10 +3,10 @@ from board import Board
 
 
 class EventGame:
-    def __init__(self, players=None):
+    def __init__(self, players=None, num_players=2):
         if players is None:
             self.players = []
-            for i in range(0, 2):  # default to 2 players
+            for i in range(0, num_players):  # default to 2 players
                 self.players.append(Player(f"Player_{i + 1}"))
         else:
             self.players = players
