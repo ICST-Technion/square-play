@@ -7,14 +7,15 @@ public class AClass : BaseShape
 {
     public List<GameObject> lines;
 
-    public override void Setup(Color newTeamColor, Color32 newSpriteColor, int teamN,ShapeManager newPieceManager, Vector3 startingPos)
+    public override void Setup(Color newTeamColor, Color32 newSpriteColor, int teamN,ShapesManager newPieceManager, Vector3 startingPos)
     {
         base.Setup(newTeamColor, newSpriteColor, teamN,newPieceManager,startingPos);
 
-
-
         base.assemblingLines=lines;
 
-        //GetComponent<Image>().sprite = Resources.Load<Sprite>("T_Bishop");
+        Debug.Log(this.name);
+
+        base.piece_num = newPieceManager.getPieceNumByType(this.name);
+
     }
 }

@@ -2,144 +2,143 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-public abstract class BaseShape : EventTrigger
+
+
+public abstract class BaseShape : MonoBehaviour
 {
     [HideInInspector]
     public Color color = Color.clear;
     [HideInInspector]
-    public int teamNum=-1;
+    public int playerNum = -1;
+    private Vector3 mOffset;
+    private float mZCoord;
 
     protected Vector3 startingPosition;
-    protected List<CellClass> currentCells = new List<CellClass>();
     protected RectTransform rectTransform = null;
-    protected ShapeManager shapesManager; //I dont know if it is even needed.
-    protected bool targetCells = true;
-    protected List<GameObject> assemblingLines;
-    protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
-    public virtual void Setup(Color newTeamColor, Color32 newSpriteColor, int teamNum, ShapeManager newPieceManager,Vector3 startingPos)
+    public ShapesManager shapeManager;
+
+    //This is very important! It is used in order to correctly position the shape on the new cells.
+    public List<GameObject> assemblingLines;
+
+    protected CellClass nearestCell=null; //tbd: need to not only highlight the nearest cell, but also the nearest cell to each line
+
+    protected int piece_num;
+
+    //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
+
+    public virtual void Setup(Color newTeamColor, Color32 newSpriteColor, int playerNum, ShapesManager newshapeManager, Vector3 startingPos)
     {
-        shapesManager = newPieceManager;
-        this.teamNum = teamNum;
+        shapeManager = newshapeManager;
+        this.playerNum = playerNum;
         color = newTeamColor;
         GetComponent<Image>().color = newSpriteColor;
         rectTransform = GetComponent<RectTransform>();
         startingPosition = startingPos;
     }
 
-    public virtual void Place(List<CellClass> newCells)
-    {
-        //Fix
-        currentCells = newCells;
-
-        foreach(CellClass cell in currentCells){
-            //Add a reference to the piece in the cell class (?)
-            cell.isOccupied = true;
-        }
-
-        //Need to position it on all of the new cells (? - maybe this is automatically done via the drag function?)
-        gameObject.SetActive(true);
-    }
-
-    public void Reset()
-    { //Tbd: just regenerate the competitve game object?
-        Kill();
-
-        //isFirstMove = true;
-
-        //Place(mOriginalCell);
-    }
-
-    public virtual void Kill()
-    {
-        // Clear current cell
-        //mCurrentCell.mCurrentPiece = null;
-
-        // Remove piece
-        //gameObject.SetActive(false);
-    }
-
-
-    public void ComputerMove()
-    {
-        //tbd: move according to the AI algo... 
-
-        // Move to new cell
-        //Place();
-
-        // End turn
-        shapesManager.SwitchTurn(teamNum);
-    }
-
     #region Movement
-    
 
-    /*this is for hint cells
-     * protected void ShowCells()
+    public bool Move()
     {
-        foreach (Cell cell in hintCells)
-            cell.mOutlineImage.enabled = true;
+        //tbd: if its a computer player - move according to the AI algo... 
+        //needto: check if those are the actual coordinates.
+        this.nearestCell = this.getNearesetCell();
+        float new_position_x = this.nearestCell.x;
+        float new_position_y = this.nearestCell.y;
+        int permutation = 1; //tbd: add permutations later.
+
+        //Check that move is valid with logic function
+        return this.shapeManager.sendMove(playerNum, piece_num, permutation, new_position_x, new_position_y);
     }
 
-    protected void ClearCells()
-    {
-          foreach (Cell cell in hintCells)
-            cell.mOutlineImage.enabled = false;
 
-        hintCells.Clear();
+    public void Place() //tbd: make it virtual so each shape will override it and place all its lines according to its shape!
+    {
+        this.nearestCell.isOccupied=true;
+        this.transform.SetParent(this.nearestCell.transform.parent);
+        this.transform.position=this.nearestCell.transform.position;
+        //tbd: position it on all of the new cells according to the actual shape (? - maybe this is automatically done via the drag function?)
+        gameObject.isStatic=true;
+        
     }
-    */
+
+
     #endregion
 
     #region Events
-    public override void OnBeginDrag(PointerEventData eventData)
-    {
-        base.OnBeginDrag(eventData);
 
-        //ShowCells(); for hint
+    void OnMouseDown()
+    {
+        //The localposition is the objects position inside the canvas.
+        this.startingPosition=this.transform.localPosition;
+        //This function is called once the player has started to drag the object.
+        mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+
+        //Store offset = gameobject world pos - mouse world pos
+        mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
     }
 
-    public override void OnDrag(PointerEventData eventData)
+    void OnMouseUp()
     {
-        base.OnDrag(eventData);
-
-        // Follow pointer
-        transform.position += (Vector3)eventData.delta;
-
-        //MAYBE look at it in a different way: search over board.cells for cells which are
-        //In the locations where our shape is. If we find one of these which is occupied we return false and none targerCells
-        foreach (CellClass cell in shapesManager.occupiedCells)
+        //This function is called once the player has finished dragging the object, and put it down.
+        if (!this.checkPositionInBoard() || !Move()) //In case of an illegal move - reset the move.
         {
-            if (cell.isThisCellOccupied(transform.position))
-            {
-                // If the mouse is within an occupied cell , break.
-                targetCells = false;
-                break;
-            }
-            
-        }
-
-
-    }
-
-    public override void OnEndDrag(PointerEventData eventData)
-    {
-        base.OnEndDrag(eventData);
-
-        //ClearCells();for hint cells
-
-        if (targetCells==false)
-        {
-            transform.position = startingPosition;
+            transform.localPosition = startingPosition;
             return;
         }
+        else //tbd:either play next player, or give the current one more moves.
+        {
+            Place();
 
-        //Place();
-
-        shapesManager.SwitchTurn(teamNum);
+            //shapeManager.SwitchTurn(playerNum);
+        }
     }
+
+    private Vector3 GetMouseAsWorldPoint()
+    {
+        //Pixel coordinates of mouse (x,y)
+        Vector3 mousePoint = Input.mousePosition;
+
+        //z coordinate of game object on screen
+        mousePoint.z = mZCoord;
+
+        //Convert it to world points
+        return Camera.main.ScreenToWorldPoint(mousePoint);
+    }
+
+    void OnMouseDrag()
+    {
+        //This function is called while the player drags the piece.
+        transform.position = GetMouseAsWorldPoint() + mOffset;
+        if (this.checkPositionInBoard()) //maybe need to check if all the lines are within the board...
+        {
+            this.nearestCell = this.getNearesetCell();
+            print(this.nearestCell.ToString());
+            //this.nearestCell.mOutlineImage.enabled = true;
+        }
+    }
+
+    private bool checkPositionInBoard(){
+        
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        bool res =this.shapeManager.isPositionedInBoard(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return res;
+    }
+
+    private CellClass getNearesetCell(){
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        var cell = this.shapeManager.getNearestCell(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return cell;
+    }
+
     #endregion
+   
 }
+
+
 
 
 
@@ -199,4 +198,20 @@ public abstract class BaseShape : EventTrigger
     CreateCellPath(-1, -1, mMovement.z);
     CreateCellPath(1, -1, mMovement.z);
 }
+
+this is for hint cells
+     protected void ShowCells()
+    {
+        foreach (Cell cell in hintCells)
+            cell.mOutlineImage.enabled = true;
+    }
+
+    protected void ClearCells()
+    {
+          foreach (Cell cell in hintCells)
+            cell.mOutlineImage.enabled = false;
+
+        hintCells.Clear();
+    }
 */
+

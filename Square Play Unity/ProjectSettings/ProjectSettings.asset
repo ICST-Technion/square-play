@@ -653,11 +653,11 @@ PlayerSettings:
     m_VersionName: 
   apiCompatibilityLevel: 6
   activeInputHandler: 0
-  cloudProjectId: 
+  cloudProjectId: 4a7fa101-e126-4ad3-8f2d-21809314b808
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: 
-  organizationId: 
+  projectName: Square Play
+  organizationId: jonatanantinitsko
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   playerDataPath: 

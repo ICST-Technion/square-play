@@ -4,8 +4,7 @@ MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - cellPrefab: {instanceID: 0}
-  - cell_material: {fileID: 2100000, guid: 9e621454d24d3854184b2b80dfa7052f, type: 2}
+  - cellPrefab: {fileID: 1784539292598201491, guid: d7d9442dc0da8284584ce9e854f8943b, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
