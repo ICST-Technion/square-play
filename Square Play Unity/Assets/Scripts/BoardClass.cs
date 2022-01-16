@@ -9,7 +9,7 @@ public class BoardClass : MonoBehaviour
 
     public List<CellClass> cells;
 
-    //For each cell, well save its lower left edge's coordinates together with the cells index in list.
+    //For each cell, well save its upper right edge coordinates together with the cells index in list.
     private SortedDictionary<Vector3, int> coordinatesToCellIndex;
 
     private CoordinatesComparer my_comparer;
@@ -53,9 +53,7 @@ public class BoardClass : MonoBehaviour
             {
                 var newCell = createCell(x, y);
                 cells.Add(newCell);
-                //Vector3 lowerLeft = new Vector3(newCell.lower_left_x, newCell.lower_left_y);
-				Vector3 lowerLeft = new Vector3(newCell.x, newCell.y);
-                coordinatesToCellIndex.Add(lowerLeft, cells.Count - 1);
+                coordinatesToCellIndex.Add(new Vector3(newCell.x, newCell.y), cells.Count - 1);
                 if(cells.Count<3){
                     print(newCell.transform.position);
                 }
@@ -74,10 +72,8 @@ public class BoardClass : MonoBehaviour
     {
         CellClass newCell = Instantiate(cellPrefab) as CellClass;
         //newCell.GetComponent<MeshRenderer>().material = cell_material;
-        //I think that posx and posy are the coordinates of the cells center. check it!
-        newCell.x = posx;
-        newCell.y = posy;
-        //TBD: add the coordinates of lower left and upper right edges.
+        newCell.setupPos(posx,posy);
+
         newCell.transform.SetParent(transform, false);
         newCell.transform.localPosition = new Vector3(posx, posy, 0);
 

@@ -7,21 +7,36 @@ public class CellClass : MonoBehaviour
 {
     public int x;
     public int y;
-    public int upper_right_x;
-    public int upper_right_y;
+    public float upper_right_x;
+    public float upper_right_y;
 
-    public int lower_left_x;
-    public int lower_left_y;
+    public float lower_left_x;
+    public float lower_left_y;
     public bool isOccupied;
 
     public Image mOutlineImage;
     
+    public void setupPos(int posx, int posy){
+        this.x = posx;
+        this.y = posy;
+        this.upper_right_x=(float)(posx+0.5);
+        this.upper_right_y=(float)(posy+0.5);
+        this.lower_left_x=(float)(posx-0.5);
+        this.lower_left_y=(float)(posy-0.5);
+
+    }
     public void LightItUp(){
-        //this.
     }
 
     public void TurnLightOff(){
         
+    }
+
+    public Vector3 upperRightEdge(){
+        var vec = this.transform.localPosition;
+        vec.x+=(float)0.5;
+        vec.y+=(float)0.5;
+        return vec;
     }
 
 }

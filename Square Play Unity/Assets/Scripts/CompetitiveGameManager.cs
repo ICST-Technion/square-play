@@ -17,6 +17,8 @@ public class CompetitiveGameManager : MonoBehaviour
 
     public competitveGameCanvasScript canvas;
 
+    [HideInInspector]
+    public int scaleFactor = 33;
     private int cols = 33;
     private int rows = 33;
     [HideInInspector]

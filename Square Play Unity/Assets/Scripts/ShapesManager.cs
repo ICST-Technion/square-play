@@ -93,11 +93,9 @@ public class ShapesManager : MonoBehaviour
     private BaseShape CreatePiece(Type pieceType)
     {
         GameObject newPieceObject = Instantiate(mPiecePrefab);
-        //Instead of transform, use the transform of the appropriate shape bank
-        newPieceObject.transform.SetParent(transform);
-        newPieceObject.transform.localScale = new Vector3(1, 1, 0);
+        newPieceObject.transform.localScale = new Vector3(this.gameManager.scaleFactor, this.gameManager.scaleFactor, 0);
         newPieceObject.transform.localRotation = Quaternion.identity;
-
+        //tbd: position in the appropriate shapes bank.
         BaseShape newPiece = (BaseShape)newPieceObject.AddComponent(pieceType);
         newPiece.shapeManager=this;
 

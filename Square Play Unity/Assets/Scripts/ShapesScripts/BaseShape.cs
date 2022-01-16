@@ -19,11 +19,13 @@ public abstract class BaseShape : MonoBehaviour
     public ShapesManager shapeManager;
 
     //This is very important! It is used in order to correctly position the shape on the new cells.
-    public List<GameObject> assemblingLines;
+    public List<MonoBehaviour> assemblingLines;
 
     protected CellClass nearestCell=null; //tbd: need to not only highlight the nearest cell, but also the nearest cell to each line
 
     protected int piece_num;
+
+    private bool isFinalPos=false;
 
     //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
@@ -42,7 +44,6 @@ public abstract class BaseShape : MonoBehaviour
     public bool Move()
     {
         //tbd: if its a computer player - move according to the AI algo... 
-        //needto: check if those are the actual coordinates.
         this.nearestCell = this.getNearesetCell();
         float new_position_x = this.nearestCell.x;
         float new_position_y = this.nearestCell.y;
@@ -55,12 +56,11 @@ public abstract class BaseShape : MonoBehaviour
 
     public void Place() //tbd: make it virtual so each shape will override it and place all its lines according to its shape!
     {
+        this.isFinalPos=true;
         this.nearestCell.isOccupied=true;
         this.transform.SetParent(this.nearestCell.transform.parent);
         this.transform.position=this.nearestCell.transform.position;
-        //tbd: position it on all of the new cells according to the actual shape (? - maybe this is automatically done via the drag function?)
-        gameObject.isStatic=true;
-        
+        this.transform.localPosition=this.nearestCell.upperRightEdge();
     }
 
 
@@ -69,7 +69,7 @@ public abstract class BaseShape : MonoBehaviour
     #region Events
 
     void OnMouseDown()
-    {
+    {if(!isFinalPos){
         //The localposition is the objects position inside the canvas.
         this.startingPosition=this.transform.localPosition;
         //This function is called once the player has started to drag the object.
@@ -78,11 +78,13 @@ public abstract class BaseShape : MonoBehaviour
         //Store offset = gameobject world pos - mouse world pos
         mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
     }
+    }
 
     void OnMouseUp()
     {
+        if(!isFinalPos){
         //This function is called once the player has finished dragging the object, and put it down.
-        if (!this.checkPositionInBoard() || !Move()) //In case of an illegal move - reset the move.
+        if (!Move()) //In case of an illegal move - reset the move.
         {
             transform.localPosition = startingPosition;
             return;
@@ -92,6 +94,7 @@ public abstract class BaseShape : MonoBehaviour
             Place();
 
             //shapeManager.SwitchTurn(playerNum);
+        }
         }
     }
 
@@ -110,12 +113,14 @@ public abstract class BaseShape : MonoBehaviour
     void OnMouseDrag()
     {
         //This function is called while the player drags the piece.
+        if(!isFinalPos){
         transform.position = GetMouseAsWorldPoint() + mOffset;
         if (this.checkPositionInBoard()) //maybe need to check if all the lines are within the board...
         {
             this.nearestCell = this.getNearesetCell();
             print(this.nearestCell.ToString());
             //this.nearestCell.mOutlineImage.enabled = true;
+        }
         }
     }
 

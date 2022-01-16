@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5764995033243320258}
   - component: {fileID: 5247497748559881320}
   - component: {fileID: 4089069863490526581}
-  - component: {fileID: 1784539292598201491}
+  - component: {fileID: -651988207141728773}
   m_Layer: 0
   m_Name: cell
   m_TagString: Untagged
@@ -157,7 +157,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 1
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &1784539292598201491
+--- !u!114 &-651988207141728773
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

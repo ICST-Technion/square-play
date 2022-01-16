@@ -164,7 +164,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 958718630252860603, guid: 43bb7524ce2ab054ba50c321a78e6427, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 958718630252860604, guid: 43bb7524ce2ab054ba50c321a78e6427, type: 3}
       propertyPath: m_Pivot.x
@@ -2249,6 +2249,17 @@ Camera:
   m_CorrespondingSourceObject: {fileID: 5616426792571078884, guid: e36ce3463f794154fab92311c4d3cd98, type: 3}
   m_PrefabInstance: {fileID: 772674155}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &856614849 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2599712732165332840, guid: 4257169d312308841959fb07f9c945a0, type: 3}
+  m_PrefabInstance: {fileID: 2599712733126703471}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 098dac532ba082d4d9803ac4593f6bd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &868310534
 GameObject:
   m_ObjectHideFlags: 0
@@ -4457,7 +4468,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!225 &1559739294
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -6888,7 +6899,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mPiecePrefab: {fileID: 0}
   a_test: {fileID: 3495638027716338895}
-  c_test: {fileID: 0}
+  c_test: {fileID: 856614849}
   boardtrans: {fileID: 0}
   canvasTrans: {fileID: 0}
 --- !u!1001 &2599712733126703471
@@ -7029,6 +7040,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Board
       objectReference: {fileID: 0}
+    - target: {fileID: 5439094708020501433, guid: 9902d23586b300c45becad994fb01e2b, type: 3}
+      propertyPath: cellPrefab
+      value: 
+      objectReference: {fileID: -651988207141728773, guid: d7d9442dc0da8284584ce9e854f8943b, type: 3}
     - target: {fileID: 5439094708020501434, guid: 9902d23586b300c45becad994fb01e2b, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
