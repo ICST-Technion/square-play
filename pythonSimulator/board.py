@@ -174,20 +174,24 @@ class Board:
         new_piece.add_coordinates(coordinates[0], coordinates[1])
         return self.check_piece_placement(new_piece, first)
 
-    def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15), first=False):
-        if 1 <= piece_num <= 16 and 1 <= permutation_index <= 8:
+    def add_piece_to_board(self, player_num, piece_num, permutation_index, x, y):
+        new_piece = Piece(piece_num)
+        new_piece = self.piece_permutation(new_piece, permutation_index)
+        new_piece.add_coordinates(x, y)
+        new_id = self.gen_piece_id()
+        for line in new_piece.shape:
+            self.line_list.append((line, player_num, new_id))
+        self.new_board = False
+        self.last_piece = new_piece
+        print("Piece added to board")
+        return True
 
-            if self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first):
-                new_piece = Piece(piece_num)
-                new_piece = self.piece_permutation(new_piece, permutation_index)
-                new_piece.add_coordinates(coordinates[0], coordinates[1])
-                new_id = self.gen_piece_id()
-                for line in new_piece.shape:
-                    self.line_list.append((line, player_num, new_id))
-                self.new_board = False
-                self.last_piece = new_piece
-                print("Piece added to board")
-                return True
+    def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15), first=False, check=True):
+        if 1 <= piece_num <= 16 and 1 <= permutation_index <= 8:
+            if check and self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first):
+                return self.add_piece_to_board(player_num, piece_num, permutation_index, coordinates[0], coordinates[1])
+            elif not check:
+                return self.add_piece_to_board(player_num, piece_num, permutation_index, coordinates[0], coordinates[1])
             else:
                 print("Piece NOT added to board")
         else:

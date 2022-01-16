@@ -84,7 +84,7 @@ class TestSquarePlay(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    print(os.getcwd())
-    for filename in os.listdir("./pythonSimulator/tests"):
-        suite.addTest(TestSquarePlay('test', filename))
+    #for filename in os.listdir("./Python Simulator/tests"):
+    #    suite.addTest(TestSquarePlay('test', filename))
+    suite.addTest(TestSquarePlay('test', "test1.txt"))
     unittest.TextTestRunner(verbosity=2).run(suite)

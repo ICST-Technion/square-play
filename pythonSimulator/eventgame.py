@@ -1,5 +1,6 @@
 from player import Player
 from board import Board
+import json
 
 
 class EventGame:
@@ -8,7 +9,7 @@ class EventGame:
             self.players = []
             for i in range(0, num_players):  # default to 2 players
                 self.players.append(Player(f"Player_{i + 1}"))
-        else:
+        else: #TODO: add a check that there are 2-4 players
             self.players = players
         self.started = False
         self.playing_players = []
@@ -21,8 +22,64 @@ class EventGame:
         self.final_round_cnt = -1
         self.game_finished = False
         self.last_new_squares = -1
+        self.good_moves = []
 
-    def start_game(self, piece_num, permutation):
+    def build_board(self, data):
+        board = Board()
+        for piece in data:
+            if not board.add_piece(player_num=piece["player_num"],
+                        piece_num=piece["piece_num"], permutation_index=piece["permutation"],
+                        coordinates=(piece["x"], piece["y"]), check=False):
+                return (board, 0)
+            self.players[piece["player_num"]-1].remove_piece(piece["piece_num"])
+        return (board, 1)
+
+    def execute_moves(self, moves, add_first_move):
+        results = [2] if add_first_move else []
+        for move in moves:
+            if move["type"]==0:
+                result = self.pass_turn(move["player_num"])
+                results.append(result)
+                if result==-1:
+                    return results
+            else:
+                result = self.move(move["player_num"], move["piece_num"], move["permutation"], move["x"], move["y"])
+                results.append(result)
+                if result==-1:
+                    return results
+        return results
+
+    
+    def load_game(self, game_file):
+        with open(game_file, "r") as game_json:
+            data = json.load(game_json)
+        moves = data["moves"]
+        board = data["board"]
+        if len(board)>0:
+            self.start_game()
+            (board, error) = self.build_board(data["board"])
+            if(error==0):
+                self.started=False
+                return -1
+            self.game_board = board
+            return self.execute_moves(moves, False)
+        else:
+            first_move = moves[0]
+            if self.start_game(first_move["piece_num"], first_move["permutation"])==-1:
+                self.started=False
+                return -1
+            moves = moves[1:]
+            return self.execute_moves(moves, True)
+
+    def store_game(self, game_file):
+        dict = { "board": [], "moves": self.good_moves}
+        with open(game_file, "w") as game_json:
+            json.dump(dict, game_json, indent=2)
+        self.started=False
+                
+        
+
+    def start_game(self, piece_num=-1, permutation=-1):
         if self.game_finished:
             print("Error, Game has already Finished")
             return -1
@@ -30,21 +87,30 @@ class EventGame:
             print("Error, Game has already started")
             return -1
 
-        curr_player = self.players[-1]
-        curr_player.add_moves()
         if not self.started:
-            if curr_player.check_piece(piece_num) and self.game_board.add_piece(len(self.players), piece_num,
-                                                                                permutation, (15, 15), True):
-                curr_player.remove_piece(piece_num)
-                if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
-                    self.curr_player_num = self.playing_players[0]
+            if(piece_num!=-1 and permutation!=-1):
+                curr_player = self.players[-1]
+                curr_player.add_moves()
+                if curr_player.check_piece(piece_num) and self.game_board.add_piece(len(self.players), piece_num,
+                                                                                    permutation, (15, 15), first=True):
+                    curr_player.remove_piece(piece_num)
+                    if self.playing_players.index(self.curr_player_num) == (len(self.playing_players) - 1):
+                        self.curr_player_num = self.playing_players[0]
+                    else:
+                        self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
+                    self.started = True
+                    self.players[self.curr_player_num - 1].add_moves()
+                    self.good_moves.append({"piece_num": piece_num, "permutation": permutation})
+                    return 1
                 else:
-                    self.curr_player_num = self.playing_players.index(self.curr_player_num) + 1
-                self.started = True
-                self.players[self.curr_player_num - 1].add_moves()
-                return 1
-            else:
+                    return -1
+            elif (piece_num==-1 and permutation!=-1 or piece_num!=-1 and permutation==-1):
+                print("Error, unsupported behavior")
                 return -1
+            else:
+                self.curr_player_num = self.playing_players[0]
+                self.players[self.curr_player_num - 1].add_moves()
+                self.started = True
 
     def check_legal_move(self, player_num, piece_num, permutation, x_coor, y_coor):
         # only check legality without checking player turn/game state
@@ -95,6 +161,7 @@ class EventGame:
             self.curr_player_num = self.playing_players[self.playing_players.index(self.curr_player_num) + 1]
         self.players[self.curr_player_num - 1].add_moves()
         print("passed turn to next player")
+        self.good_moves.append({"type": 0, "player_num": player_num})
         if self.final_round_cnt != -1:  # relevant for the final round
             self.final_round_cnt -= 1
         if self.__check_game_finished() == 5:
@@ -125,6 +192,10 @@ class EventGame:
                 curr_player.add_moves(new_squares - 1)
                 print(f"{curr_player.name} got {new_squares - 1} more moves with a total of {curr_player.moves_left()} left")
 
+            self.good_moves.append({"type": 1, "player_num": player_num, 
+                                            "piece_num": piece_num, 
+                                            "permutation": permutation, 
+                                            "x": x_coor, "y": y_coor})
             if curr_player.is_player_finished():
                 print("Final Round for players with less turns")
                 self.final_round_cnt = len(self.playing_players) - self.playing_players.index(self.curr_player_num) - 1
