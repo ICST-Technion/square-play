@@ -4,8 +4,6 @@ Here we define pieces and their base coordinates
 each piece's shape is a list of sets of tuples which are points on the grid
 """
 
-P1 = [{(), ()}]
-
 
 class Piece:
     def __init__(self, piece_num):
@@ -27,11 +25,11 @@ class Piece:
             [{(0, 0), (1, 0)}, {(1, 0), (1, -1)}, {(1, -1), (0, -1)}, {(0, -1), (0, 0)}],
             [{(0, 0), (0, -1)}, {(0, -1), (-1, -1)}, {(-1, -1), (-1, 0)}, {(-1, 0), (0, 0)}],
             [{(-1, 0), (-1, -1)}, {(-1, -1), (-2, -1)}, {(-2, -1), (-2, 0)}, {(-2, 0), (-1, 0)}],
-            [{(-1, -2), (-1, -1)}, {(-1, -1), (-2, -1)}, {(-2, -1), (-2, -2)},{(-2, -2), (-1, -2)}],
+            [{(-1, -2), (-1, -1)}, {(-1, -1), (-2, -1)}, {(-2, -1), (-2, -2)}, {(-2, -2), (-1, -2)}],
             [{(-1, -2), (0, -2)}, {(0, -2), (0, -1)}, {(0, -1), (-1, -1)}, {(-1, -1), (-1, -2)}],
             [{(0, -2), (1, -2)}, {(1, -2), (1, -1)}, {(1, -1), (0, -1)}, {(0, -1), (0, -2)}],
             [{(-1, -2), (0, -2)}, {(0, -2), (0, -3)}, {(0, -3), (-1, -3)}, {(-1, -3), (-1, -2)}]
-            ]
+        ]
 
         if piece_num == 1:  # this piece is shaped like a 6. Zero point is the top right corner
             self.shape = [{(0, 0), (-1, 0)}, {(-1, 0), (-1, -1)},
@@ -95,108 +93,57 @@ class Piece:
 
         if piece_num == 16:  # this piece is shaped like a P without middle line. Zero point is the top right corner
             self.shape = [{(0, 0), (-1, 0)}, {(0, 0), (0, -1)},
-                          {(-1, -1), (0, -1)}, {(-1, -2), (-1, -1)}]
+                          {(-1, -1), (-1, 0)}, {(-1, -2), (-1, -1)}]
 
     def rotate_90_right(self):
         # first we switch the x and y axis, and then flip new y axis sign
-
         new_shape = list()
-        a = 999
-        b = 999
-        c = 999
-        d = 999
-        for line in self.shape:
-            for idx, (x, y) in enumerate(line):
-                if idx == 0:
-                    a = y
-                    b = x
-                else:
-                    c = y
-                    d = x
-            new_shape.append({(a, -1 * b), (c, -1 * d)})
+        for (a, b), (c, d) in self.shape:
+            new_shape.append({(b, -1 * a), (d, -1 * c)})
         self.shape = new_shape
 
         new_possible_squares = list()
         for sq in self.possible_squares:
             new_sq = list()
-            for line in sq:
-                for idx, (x, y) in enumerate(line):
-                    if idx == 0:
-                        a = y
-                        b = x
-                    else:
-                        c = y
-                        d = x
-                new_sq.append({(a, -1 * b), (c, -1 * d)})
+            for (a, b), (c, d) in sq:
+                new_sq.append({(b, -1 * a), (d, -1 * c)})
             new_possible_squares.append(new_sq)
-
         self.possible_squares = new_possible_squares
 
     def x_axis_flip(self):
         # flip the x axis sign
         new_shape = list()
-        a = 999
-        b = 999
-        c = 999
-        d = 999
-        for line in self.shape:
-            for idx, (x, y) in enumerate(line):
-                if idx == 0:
-                    a = x
-                    b = y
-                else:
-                    c = x
-                    d = y
+        for (a, b), (c, d) in self.shape:
             new_shape.append({(-1 * a, b), (-1 * c, d)})
         self.shape = new_shape
 
         new_possible_squares = list()
         for sq in self.possible_squares:
             new_sq = list()
-            for line in sq:
-                for idx, (x, y) in enumerate(line):
-                    if idx == 0:
-                        a = x
-                        b = y
-                    else:
-                        c = x
-                        d = y
+            for (a, b), (c, d) in sq:
                 new_sq.append({(-1 * a, b), (-1 * c, d)})
             new_possible_squares.append(new_sq)
-
         self.possible_squares = new_possible_squares
+
+    def permutate(self, rotates=0, flip=False):
+        if flip:
+            self.x_axis_flip()
+
+        for i in range(rotates):
+            self.rotate_90_right()
 
     def add_coordinates(self, x_val: int, y_val: int):
         new_shape = list()
-        a = 999
-        b = 999
-        c = 999
-        d = 999
-        for line in self.shape:
-            for idx, (x, y) in enumerate(line):
-                if idx == 0:
-                    a = x + x_val
-                    b = y + y_val
-                else:
-                    c = x + x_val
-                    d = y + y_val
-            new_shape.append({(a, b), (c, d)})
+        for (a, b), (c, d) in self.shape:
+            new_shape.append({(a + x_val, b + y_val), (c + x_val, d + y_val)})
         self.shape = new_shape
 
         new_possible_squares = list()
         for sq in self.possible_squares:
             new_sq = list()
-            for line in sq:
-                for idx, (x, y) in enumerate(line):
-                    if idx == 0:
-                        a = x + x_val
-                        b = y + y_val
-                    else:
-                        c = x + x_val
-                        d = y + y_val
-                new_sq.append({(a, b), (c, d)})
+            for (a, b), (c, d) in sq:
+                new_sq.append({(a + x_val, b + y_val), (c + x_val, d + y_val)})
             new_possible_squares.append(new_sq)
-
         self.possible_squares = new_possible_squares
 
     def get_possible_squares(self):

@@ -1,71 +1,82 @@
-
+from eventgame import EventGame
+from interactivegame import InteractiveGame
 from player import Player
-from board import Board
+import socket
+import numpy as np
+import struct
 
 if __name__ == '__main__':
+    # ---------------------- INTERACTIVE GAME ----------------------
     print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
     while not 2 <= number_of_players <= 4:
         number_of_players = int(input("Invalid Number of players, try again"))
     player_list = list()
     for i in range(0, number_of_players):
-        player_list.append(Player("Player" + str(i + 1)))
+        player_list.append(Player(f"Player_{i + 1}"))
+    test_Game = InteractiveGame(player_list)
+    test_Game.gameplay()
 
-    game_board = Board()
+    # ---------------------- EVENT GAME ----------------------
+    """
+    print("Welcome to Square Game")
+    number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
+    while not 2 <= number_of_players <= 4:
+        number_of_players = int(input("Invalid Number of players, try again"))
+    player_list = list()
+    for i in range(0, number_of_players):
+        player_list.append(Player(f"Player_{i + 1}"))
+    test_Game = EventGame(player_list)
+    test_Game.start_game(13, 4)
+    test_Game.move(1, 9, 1, 16, 16)
+    """
+    # ----------------------- REMOTE GAME -----------------------
 
-    winners = []
-
+    s = socket.socket()
+    socket.setdefaulttimeout(None)
+    print('socket created ')
+    port = 60000
+    s.bind(('127.0.0.1', port))
+    s.listen(1)
+    game_started = False
+    remote_game = None
+    to_send = float(-999)
     while True:
-        player = player_list[-1]  # so that he will always have an extra turn at the end if someone else wins, since
-        # the for loop for the turns begins at the first player
-        if game_board.new_board:
-            print(player.name + "'s Turn, choose piece and permutation, placement is predefined")
-            pn, pr = input("Syntax is: <piece num: 1-16> <permutation: 1-8>:\n").split()
-            pn = int(pn)
-            pr = int(pr)
-            if player.check_piece(pn) and game_board.add_piece(len(player_list), pn, pr):
-                player.remove_piece(pn)
-                break
-            else:
-                print("Try again")
+        try:
+            c, addr = s.accept()
+            bytes_received = c.recv(4000)
+            action_code = np.frombuffer(bytes_received, dtype=np.float32)
 
-    while True:
-        for count, player in enumerate(player_list):
-            # for loop for player turns
-            # each player has one move at the start of each turn
-            player.add_moves()
+            if action_code[0] == 0 and remote_game is None:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=str)
+                players_names = array_received[0].split(',')
+                players = []
+                for name in array_received:
+                    players.append(Player(name))
+                remote_game = EventGame(players)
+                to_send = 1
 
-            while True:
-                print(player.name + "'s Move, choose piece, permutation, placement")
-                pn, pr, x, y = input("Syntax is: <piece num: 1-16> <permutation: 1-8> <X coordinate : 1-32> <Y "
-                                     "coordinate 1-32)>:\n").split()
-                pn = int(pn)
-                pr = int(pr)
-                coordinates = (int(x), int(y))
+            if action_code[0] == 1 and remote_game:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=np.float32)
+                to_send = float(remote_game.start_game(array_received[0], array_received[1]))
+                if to_send != -1:
+                    game_started = True
 
-                if player.check_piece(pn) and game_board.add_piece(count + 1, pn, pr, coordinates):
-                    player.remove_piece(pn)
-                    new_squares = game_board.new_squares()
+            if action_code[0] == 2 and game_started:
+                bytes_received = c.recv(4000)
+                array_received = np.frombuffer(bytes_received, dtype=np.float32)
+                array_received = np.frombuffer(bytes_received, dtype=np.string_)
+                to_send = float(remote_game.move(array_received[0], array_received[1], array_received[2],
+                                                 array_received[3], array_received[4]))
 
-                    if new_squares != 0:
-                        player.add_moves(new_squares - 1)
-                        # print(new_squares)
-                        print(player.name + " got " + str(new_squares - 1) + " more moves with a total of " + str(
-                            player.moves_left()) + " left")
+            bytes_to_send = struct.pack("%f", to_send)
+            c.sendall(bytes_to_send)
+            c.close()
 
-                    if player.is_player_finished():
-                        print("Final Round for players with less turns")
-                        winners.append(player)
-                        break
-
-                    if player.moves_left() < 1:  # end of turn for player
-                        break
-        if len(winners) != 0:
+        except Exception as e:
+            print("error")
+            c.sendall(bytearray([]))
+            c.close()
             break
-
-    print("Congratulations, the winner/s are: ")
-    num_turns = 0
-    for player in winners:
-        num_turns = player.turns_played
-        print(player.name)
-    print("Which finished the game in " + str(num_turns) + " Turns")
