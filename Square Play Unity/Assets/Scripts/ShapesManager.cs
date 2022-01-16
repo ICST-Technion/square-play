@@ -10,6 +10,7 @@ public class ShapesManager : MonoBehaviour
     public AClass a_test;
 
     public CClass c_test;
+
     private List<BaseShape> player1Pieces = new List<BaseShape>();
     private List<BaseShape> player2Pieces = new List<BaseShape>();
     private List<BaseShape> player3Pieces = new List<BaseShape>();
@@ -22,7 +23,7 @@ public class ShapesManager : MonoBehaviour
     public Transform canvasTrans;
     private string[] pieceOrder = new string[16]
     {
-        "A","C","chair","E","F","Five","G","Gimel","ground","H","Lambda","notnot","P","Seven","shape3","Six" 
+        "Six","H","shape3","Gimel","F","E","P","A","notnot","ground","Five","chair","G","C","Seven","Lambda"
     };
 
     private Dictionary<string, Type> pieceLibrary = new Dictionary<string, Type>()
