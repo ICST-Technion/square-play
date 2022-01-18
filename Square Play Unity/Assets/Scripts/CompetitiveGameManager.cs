@@ -86,7 +86,8 @@ public class CompetitiveGameManager : MonoBehaviour
     [SerializeField]
     private int[] dataOut, dataIn;
 
-    private void setupSocket(){
+    private void setupSocket()
+    {
         client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         client.Connect(ip, port);
         if (!client.Connected)
@@ -97,7 +98,8 @@ public class CompetitiveGameManager : MonoBehaviour
         Debug.Log("Connected");
     }
 
-    private void endSocket(){
+    private void endSocket()
+    {
         client.Close();
     }
     
