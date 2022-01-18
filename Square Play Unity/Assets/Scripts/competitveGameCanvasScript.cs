@@ -2,17 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 
 public class competitveGameCanvasScript : MonoBehaviour
 {
     public CompetitiveGameManager manager;
     public GameObject gameCanvas;
     public GameObject preCanvas;
-    // Start is called before the first frame update
 
+    public List<GameObject> playerNamesText;
+
+    // Start is called before the first frame update
     void Start()
     {
-        
+    
     }
 
     // Update is called once per frame
@@ -30,10 +34,20 @@ public class competitveGameCanvasScript : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
+    private void updateNames(){
+        for (int i = 0; i < 4; i++)
+        {
+            this.playerNamesText[i].GetComponent<TextMeshProUGUI>().text=manager.playernames[i]+":";
+        }
+    }
+
     public void startGame()
     {
-     gameCanvas.SetActive(true);
-     preCanvas.SetActive(false);
+        manager.msgNamesToServer();
+        this.updateNames();
+        gameCanvas.SetActive(true);
+        preCanvas.SetActive(false);
+        manager.startGame();
     }
 
     public void name1(string name1){

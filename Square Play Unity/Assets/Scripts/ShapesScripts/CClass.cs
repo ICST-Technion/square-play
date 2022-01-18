@@ -10,8 +10,12 @@ public class CClass : BaseShape
     {
         base.Setup(newTeamColor, newSpriteColor, teamN,newPieceManager,startingPos);
 
-        Debug.Log(this.name);
 
+        base.piece_num = newPieceManager.getPieceNumByType(this.name);
+    }
+    public void tempSet(ShapesManager newPieceManager){
+         base.playerNum=1;
+this.shapeManager=newPieceManager;
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
     }
 }

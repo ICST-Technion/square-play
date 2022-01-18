@@ -4,12 +4,12 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
 
+
 public abstract class BaseShape : MonoBehaviour
 {
     [HideInInspector]
     public Color color = Color.clear;
-    [HideInInspector]
-    public int playerNum = -1;
+    
     private Vector3 mOffset;
     private float mZCoord;
 
@@ -25,37 +25,46 @@ public abstract class BaseShape : MonoBehaviour
 
     protected int piece_num;
 
+    protected int permutation=1;
+
     private bool isFinalPos=false;
+    [HideInInspector]
+    public bool isPlayable=false; 
+    [HideInInspector]
+    public bool isFirstTurn=false;
+    [HideInInspector]
+    public int playerNum; //redundent, remove later from all classes.
 
     //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
     public virtual void Setup(Color newTeamColor, Color32 newSpriteColor, int playerNum, ShapesManager newshapeManager, Vector3 startingPos)
     {
-        shapeManager = newshapeManager;
-        this.playerNum = playerNum;
-        color = newTeamColor;
+        this.shapeManager = newshapeManager;
+        //this.playerNum = playerNum;
+        this.color = newTeamColor;
         GetComponent<Image>().color = newSpriteColor;
-        rectTransform = GetComponent<RectTransform>();
-        startingPosition = startingPos;
+        this.rectTransform = GetComponent<RectTransform>();
+        this.startingPosition = startingPos;
     }
 
     #region Movement
 
-    public bool Move()
+    public int Move()
     {
         //tbd: if its a computer player - move according to the AI algo... 
         this.nearestCell = this.getNearesetCell();
-        float new_position_x = this.nearestCell.x;
-        float new_position_y = this.nearestCell.y;
-        int permutation = 1; //tbd: add permutations later.
+        int new_position_x = this.nearestCell.x;
+        int new_position_y = this.nearestCell.y;
 
         //Check that move is valid with logic function
-        return this.shapeManager.sendMove(playerNum, piece_num, permutation, new_position_x, new_position_y);
+        print("sending move for shape : "+this.name);
+        return this.shapeManager.sendMove(piece_num, permutation, new_position_x, new_position_y);
     }
 
 
-    public void Place() //tbd: make it virtual so each shape will override it and place all its lines according to its shape!
+    public void Place() 
     {
+        //Placing the piece in its final positon on board, and making it unplayable.
         this.isFinalPos=true;
         this.nearestCell.isOccupied=true;
         this.transform.SetParent(this.nearestCell.transform.parent);
@@ -63,34 +72,70 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.localPosition=this.nearestCell.upperRightEdge();
     }
 
+     private bool checkPositionInBoard(){
+        
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        bool res =this.shapeManager.isPositionedInBoard(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return res;
+    }
+
+    private CellClass getNearesetCell(){
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        var cell = this.shapeManager.getNearestCell(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return cell;
+    }
+
+     private void getInitialCell(){
+        if(isFirstTurn){
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        var startingPos = new Vector3(15,15);
+        this.nearestCell = this.shapeManager.getNearestCell(startingPos);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        }
+    }
 
     #endregion
 
     #region Events
 
     void OnMouseDown()
-    {if(!isFinalPos){
-        //The localposition is the objects position inside the canvas.
-        this.startingPosition=this.transform.localPosition;
+    {
         //This function is called once the player has started to drag the object.
-        mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+        if(!isFinalPos&&isPlayable){
+        if(!isFirstTurn){
+            //The localposition is the objects position inside the canvas.
+            this.startingPosition=this.transform.localPosition;
 
-        //Store offset = gameobject world pos - mouse world pos
-        mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+            mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+
+            //Store offset = gameobject world pos - mouse world pos
+            mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+        }else{
+            //In the first turn in the game, the player (4) chooses which shape to position in the middle of the board
+            this.getInitialCell();
+            this.Place();
+            this.shapeManager.sendStartGame(piece_num, permutation);
+        }
     }
     }
+
 
     void OnMouseUp()
     {
-        if(!isFinalPos){
         //This function is called once the player has finished dragging the object, and put it down.
-        if (!Move()) //In case of an illegal move - reset the move.
+        if(!isFinalPos&&!isFirstTurn){
+        if (!this.checkPositionInBoard()||Move()==-1) 
         {
+            //In case of an illegal move - reset the move.
+            this.shapeManager.shoutAtPlayer();
             transform.localPosition = startingPosition;
             return;
         }
-        else //tbd:either play next player, or give the current one more moves.
+        else
         {
+            //tbd:either play next player, or give the current one more moves.
             Place();
 
             //shapeManager.SwitchTurn(playerNum);
@@ -113,30 +158,15 @@ public abstract class BaseShape : MonoBehaviour
     void OnMouseDrag()
     {
         //This function is called while the player drags the piece.
-        if(!isFinalPos){
+        if(!isFinalPos&&!isFirstTurn){
         transform.position = GetMouseAsWorldPoint() + mOffset;
-        if (this.checkPositionInBoard()) //maybe need to check if all the lines are within the board...
+        if (this.checkPositionInBoard()) 
         {
             this.nearestCell = this.getNearesetCell();
-            print(this.nearestCell.ToString());
+            //print(this.nearestCell.ToString());
             //this.nearestCell.mOutlineImage.enabled = true;
         }
         }
-    }
-
-    private bool checkPositionInBoard(){
-        
-        this.transform.SetParent(this.shapeManager.boardtrans);
-        bool res =this.shapeManager.isPositionedInBoard(transform.localPosition);
-        this.transform.SetParent(this.shapeManager.canvasTrans);
-        return res;
-    }
-
-    private CellClass getNearesetCell(){
-        this.transform.SetParent(this.shapeManager.boardtrans);
-        var cell = this.shapeManager.getNearestCell(transform.localPosition);
-        this.transform.SetParent(this.shapeManager.canvasTrans);
-        return cell;
     }
 
     #endregion

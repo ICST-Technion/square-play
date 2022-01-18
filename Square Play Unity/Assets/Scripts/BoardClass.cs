@@ -54,9 +54,6 @@ public class BoardClass : MonoBehaviour
                 var newCell = createCell(x, y);
                 cells.Add(newCell);
                 coordinatesToCellIndex.Add(new Vector3(newCell.x, newCell.y), cells.Count - 1);
-                if(cells.Count<3){
-                    print(newCell.transform.position);
-                }
             }
 
         }

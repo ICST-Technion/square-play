@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class ShapesManager : MonoBehaviour
 {
@@ -11,15 +13,25 @@ public class ShapesManager : MonoBehaviour
 
     public CClass c_test;
 
+    [HideInInspector]
+    public int currentPlayer=2;
+
+    public GameObject turnStatisticsPlayerName;
+
     private List<BaseShape> player1Pieces = new List<BaseShape>();
     private List<BaseShape> player2Pieces = new List<BaseShape>();
     private List<BaseShape> player3Pieces = new List<BaseShape>();
     private List<BaseShape> player4Pieces = new List<BaseShape>();
-    private List<BaseShape> playablePieces = new List<BaseShape>();
+
+    public GameObject bank1;
+    public GameObject bank2;
+    public GameObject bank3;
+    public GameObject bank4;
 
     private CompetitiveGameManager gameManager;
+     [HideInInspector]
     public Transform boardtrans;
-
+     [HideInInspector]
     public Transform canvasTrans;
     private string[] pieceOrder = new string[16]
     {
@@ -49,12 +61,17 @@ public class ShapesManager : MonoBehaviour
 
     
     public void temporarySetup(BoardClass board, CompetitiveGameManager gM)
-    {
-        a_test.shapeManager = this;
-        c_test.shapeManager=this;
+    {gM.randomizePlayerNames();
+        a_test.tempSet(this);
+        c_test.tempSet(this);
+        a_test.isFirstTurn=true;
+        c_test.isFirstTurn=true;
+        a_test.isPlayable=true;
+        c_test.isPlayable=true;
         gameManager = gM;
         boardtrans=gM.board.transform;
         canvasTrans=gM.canvas.transform;
+        this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text=this.gameManager.playernames[this.currentPlayer+1]+"'s Turn:";
     }
 
 
@@ -63,75 +80,74 @@ public class ShapesManager : MonoBehaviour
         gameManager = gM;
         boardtrans=gM.board.transform;
         canvasTrans=gM.canvas.transform;
-        player1Pieces = CreatePieces(Color.white, new Color32(80, 124, 159, 255),1);
+        player1Pieces = CreatePieces(Color.white, new Color32(80, 124, 159, 255),1,bank1);
+        
+        player2Pieces = CreatePieces(Color.black, new Color32(210, 95, 64, 255),2,bank2);
 
-        player2Pieces = CreatePieces(Color.black, new Color32(210, 95, 64, 255),2);
+        player3Pieces = CreatePieces(Color.red, new Color32(210, 95, 64, 255),3,bank3); //other team color.
 
-        player3Pieces = CreatePieces(Color.red, new Color32(210, 95, 64, 255),3); //other team color.
-
-        player4Pieces = CreatePieces(Color.green, new Color32(210, 95, 64, 255),4); //another different team color.
-
-        SwitchTurn(1);
+        player4Pieces = CreatePieces(Color.green, new Color32(210, 95, 64, 255),4,bank4); //another different team color.
     }
 
-    private List<BaseShape> CreatePieces(Color teamColor, Color32 spriteColor,int playerNum)
+    private List<BaseShape> CreatePieces(Color teamColor, Color32 spriteColor,int playerNum,GameObject bank)
     {
-        //Fix according to changes in createPiece
         List<BaseShape> newPieces = new List<BaseShape>();
 
         for (int i = 0; i < pieceOrder.Length; i++)
         {
             string key = pieceOrder[i];
             Type pieceType = pieceLibrary[key];
-            BaseShape newPiece = CreatePiece(pieceType);
-            newPieces.Add(newPiece);
+            BaseShape newPiece = createPiece(pieceType);
             newPiece.Setup(teamColor, spriteColor, playerNum, this,newPiece.transform.position);
+            newPieces.Add(newPiece);
         }
-
+        this.placePieces(newPieces,bank);
         return newPieces;
     }
 
-    private BaseShape CreatePiece(Type pieceType)
+    private BaseShape createPiece(Type pieceType)
     {
         GameObject newPieceObject = Instantiate(mPiecePrefab);
         newPieceObject.transform.localScale = new Vector3(this.gameManager.scaleFactor, this.gameManager.scaleFactor, 0);
         newPieceObject.transform.localRotation = Quaternion.identity;
-        //tbd: position in the appropriate shapes bank.
         BaseShape newPiece = (BaseShape)newPieceObject.AddComponent(pieceType);
-        newPiece.shapeManager=this;
-
         return newPiece;
     }
 
-    private void PlacePieces(List<BaseShape> pieces, BoardClass board)
+    private void placePieces(List<BaseShape> pieces, GameObject bank)
     {
-        //Place each piece in the correct bank
+        int x_add=0,y_add=0;
+        pieces.ForEach(delegate (BaseShape piece){
+            float new_x = bank.transform.localPosition.x + x_add*(this.gameManager.scaleFactor+10) + 4;
+            float new_y = bank.transform.localPosition.y + y_add*(this.gameManager.scaleFactor+10) + 4;
+           piece.transform.localPosition=new Vector3(new_x,new_y);
+           x_add=(x_add+1)%2;
+           if(x_add==0){
+               y_add++;
+           }
+        });
     }
 
-    private void SetInteractive(List<BaseShape> allPieces, bool value)
+    private void setInteractive(List<BaseShape> allPieces, bool value)
     {
-        if (value) {
-            foreach (BaseShape piece in allPieces)
-                piece.enabled = value;
-        }
+        allPieces.ForEach(delegate (BaseShape piece){
+             piece.isPlayable = value;
+        });
     }
 
 
-    public void SwitchTurn(int playerNum)
+    public void switchTurn()
     {
-        playerNum = (playerNum + 1) % 4;
-        SetInteractive(player1Pieces, playerNum == 1);
+        this.currentPlayer = (currentPlayer + 1) % 4;
+        this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text=this.gameManager.playernames[this.currentPlayer]+"'s Turn:";
 
-        SetInteractive(player2Pieces, playerNum == 2);
+        setInteractive(player1Pieces, currentPlayer == 0);
 
-        SetInteractive(player3Pieces, playerNum == 3);
+        setInteractive(player2Pieces, currentPlayer == 1);
 
-        SetInteractive(player4Pieces, playerNum == 4);
+        setInteractive(player3Pieces, currentPlayer == 2);
 
-        foreach (BaseShape piece in playablePieces)
-        {
-            piece.enabled = playerNum==piece.playerNum;
-        }
+        setInteractive(player4Pieces, currentPlayer == 3);
     }
 
     public int getPieceNumByType(string shapeClassName){
@@ -145,21 +161,35 @@ public class ShapesManager : MonoBehaviour
         }  
         return idx;
     }
+    public int sendStartGame(int pieceNum,int permutation) {
+        a_test.isFirstTurn=false;//tbd:delete
+        c_test.isFirstTurn=false;//tbd:delete
+        this.endFirstMove();
+        return this.gameManager.msgGameStartToServer(pieceNum,permutation);
+    }
+           
 
-    public bool sendMove(int playerNum, int piece_num,int permutation, float new_position_x, float new_position_y){
-        float[] data_out = new float[5]{(float)playerNum, (float)piece_num, (float)permutation, new_position_x,new_position_y};
-        if(this.gameManager.msgMoveToServer(data_out)){
-            return false;
-        }
-        return true;
+    public int sendMove(int pieceNum,int permutation, int new_position_x, int new_position_y)=>this.gameManager.msgMoveToServer( this.currentPlayer + 1,  pieceNum, permutation,  new_position_x,  new_position_y);
+    
+
+    public bool isPositionedInBoard(Vector3 pos)=>this.gameManager.board.isInBoard(pos);
+
+    public CellClass getNearestCell(Vector3 pos)=> this.gameManager.board.getCellByCoordinates(pos);
+
+    public void startGame(){
+        this.switchTurn();
+        this.player4Pieces.ForEach(delegate (BaseShape shape){
+            shape.isFirstTurn=true;
+        });
     }
 
-    public bool isPositionedInBoard(Vector3 pos){
-        return this.gameManager.board.isInBoard(pos);
+    private void endFirstMove(){
+        this.switchTurn();
+        this.player4Pieces.ForEach(delegate (BaseShape shape){
+            shape.isFirstTurn=false;
+        });
     }
-
-    public CellClass getNearestCell(Vector3 pos){
-        return this.gameManager.board.getCellByCoordinates(pos);
+    public void shoutAtPlayer(){
+        this.gameManager.showNotification("Youv'e made an illegal move!");
     }
-
 }

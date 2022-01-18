@@ -7,7 +7,7 @@ import struct
 
 if __name__ == '__main__':
     # ---------------------- INTERACTIVE GAME ----------------------
-    print("Welcome to Square Game")
+    '''print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
     while not 2 <= number_of_players <= 4:
         number_of_players = int(input("Invalid Number of players, try again"))
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         player_list.append(Player(f"Player_{i + 1}"))
     test_Game = InteractiveGame(player_list)
     test_Game.gameplay()
-
+'''
     # ---------------------- EVENT GAME ----------------------
     """
     print("Welcome to Square Game")
@@ -45,38 +45,40 @@ if __name__ == '__main__':
         try:
             c, addr = s.accept()
             bytes_received = c.recv(4000)
-            action_code = np.frombuffer(bytes_received, dtype=np.float32)
-
+            action_code = np.frombuffer(bytes_received, dtype=np.intc)
+            print("got action code: "+str(action_code))
             if action_code[0] == 0 and remote_game is None:
                 bytes_received = c.recv(4000)
-                array_received = np.frombuffer(bytes_received, dtype=str)
-                players_names = array_received[0].split(',')
+                players_names = bytes_received.decode("utf-8").split(',')
                 players = []
-                for name in array_received:
+                for name in players_names:
                     players.append(Player(name))
                 remote_game = EventGame(players)
                 to_send = 1
-
             if action_code[0] == 1 and remote_game:
                 bytes_received = c.recv(4000)
-                array_received = np.frombuffer(bytes_received, dtype=np.float32)
-                to_send = float(remote_game.start_game(array_received[0], array_received[1]))
+                array_received = np.frombuffer(bytes_received, dtype=np.intc)
+                to_send = remote_game.start_game(array_received[0], array_received[1])
                 if to_send != -1:
                     game_started = True
 
             if action_code[0] == 2 and game_started:
                 bytes_received = c.recv(4000)
-                array_received = np.frombuffer(bytes_received, dtype=np.float32)
-                array_received = np.frombuffer(bytes_received, dtype=np.string_)
-                to_send = float(remote_game.move(array_received[0], array_received[1], array_received[2],
-                                                 array_received[3], array_received[4]))
-
-            bytes_to_send = struct.pack("%f", to_send)
+                array_received = np.frombuffer(bytes_received, dtype=np.intc)
+                print("move:")
+                print(array_received)
+                '''array_received = np.frombuffer(bytes_received, dtype=np.string_)
+                print("something weird:")
+                print(array_received)'''
+                to_send = remote_game.move(array_received[0], array_received[1], array_received[2],
+                                                 array_received[3], array_received[4])
+            bytes_to_send = struct.pack('i', to_send)
             c.sendall(bytes_to_send)
             c.close()
 
         except Exception as e:
-            print("error")
+            print("error:")
+            print(e)
             c.sendall(bytearray([]))
             c.close()
             break
