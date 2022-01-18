@@ -70,6 +70,11 @@ if __name__ == '__main__':
                 array_received = np.frombuffer(bytes_received, dtype=np.string_)
                 to_send = float(remote_game.move(array_received[0], array_received[1], array_received[2],
                                                  array_received[3], array_received[4]))
+            if action_code[0] == 3: # restart game
+                game_started = False
+                remote_game = None
+                to_send = float(-999)
+                continue
 
             bytes_to_send = struct.pack("%f", to_send)
             c.sendall(bytes_to_send)
