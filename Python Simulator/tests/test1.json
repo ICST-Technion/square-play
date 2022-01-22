@@ -1,48 +1,48 @@
 {
-  "board": [
-    {
-      "player_num": 4,
-      "piece_num": 13,
-      "permutation": 4, 
-      "x": 15,
-      "y": 15
-    },
-    {
-      "player_num": 1,
-      "piece_num": 9,
-      "permutation": 1, 
-      "x": 16,
-      "y": 16
-    },
-    {
-      "player_num": 1,
-      "piece_num": 5,
-      "permutation": 2, 
-      "x": 17,
-      "y": 15
-    }
-  ],
-  "moves": [
-    {
-      "type": 1,
-      "player_num": 1,
-      "piece_num": 8,
-      "permutation": 4,
-      "x": 13,
-      "y": 15
-    },
-    {
-      "type": 0,
-      "player_num": 2
-    },
-    {
-      "type": 1,
-      "player_num": 3,
-      "piece_num": 5,
-      "permutation": 7,
-      "x": 15,
-      "y": 16
-    }
-  ],
-  "expect": [2, 0, -1]
+    "board": [
+        {
+            "player_num": 4,
+            "piece_num": 13,
+            "permutation": 4,
+            "x": 15,
+            "y": 15
+        },
+        {
+            "player_num": 1,
+            "piece_num": 9,
+            "permutation": 1,
+            "x": 16,
+            "y": 16
+        },
+        {
+            "player_num": 1,
+            "piece_num": 5,
+            "permutation": 2,
+            "x": 17,
+            "y": 15
+        }
+    ],
+    "moves": [
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 8,
+            "permutation": 4,
+            "x": 13,
+            "y": 15
+        },
+        {
+            "type": 0,
+            "player_num": 2
+        },
+        {
+            "type": 1,
+            "player_num": 3,
+            "piece_num": 5,
+            "permutation": 7,
+            "x": 15,
+            "y": 16
+        }
+    ],
+    "expect": [2, 0, -1]
 }
