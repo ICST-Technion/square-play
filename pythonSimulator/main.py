@@ -2,7 +2,7 @@ from eventgame import EventGame
 # from interactivegame import InteractiveGame
 from player import Player
 import socket
-#import numpy as np
+import numpy as np
 import struct
 
 
