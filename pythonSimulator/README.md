@@ -97,23 +97,85 @@ To check if a new square has appeared on the board we can search for the 8 possi
 be created as a result of the piece placement, as well as checking that the square has at least one
 line from the new piece and one from beforehand.
 
+## Load and Store:
+
+You can save an ongoing game by calling the function store_game() of EventGame. This function will save the current game in a `json` format to the file name you pass as an argument. Please choose a unique file name so that you won't override other saved games. The file will be saved in `saved_games` folder.
+
+A saved game is a json in this format:
+```
+{
+  "board": []
+  "moves: [
+    {
+      "type":
+      "player_num": ,
+      "piece_num":  ,
+      "permutation": ,
+      "x": ,
+      "y": 
+    }
+  ]
+}
+```
+
+Meaning a saved game is an object with a list describing the board and a list of moves, where each move is described by:
+
+1. type - describes weather this is a regular move (1) or a "pass turn" move (0).
+2. player_num - the number describing the player who performs the move.
+3. piece_num - the number describing the piece that is added to the board
+4. permutation - a number describing the rotation of the piece
+5. x and y - the coordinates on the board to locate the piece
+
+Note that the board list describes the initial board of the game - **The board list is always empty for saved games, do not change it!**
+
+You can load an old game to continue by using the game.load_game function. Pass the saved game file path as an argument.
 ## Tests:
 
-In order to run the tests, run the `run_tests.py` file. I will run all the tests, that are located in folder Python Simulator/tests.
+In order to run the tests, run the `run_tests.py` file. It will run all the tests, that are located in folder Python Simulator/tests.
 
 ### Test structure:
 
-Each file in this folder is a `.txt` file, that represents a test.
+Each file in this folder is a `.json` file, that represents a test.
 
-In every file, each line represents a move, and consists of 4 parts - move type, move, result, and status code, seperated by `||` seperator.
+A test is similar to a saved game, it is a json in this format:
+```
+{
+  "board": [
+    {
+      "player_num": ,
+      "piece_num":  ,
+      "permutation": ,
+      "x": ,
+      "y": 
+    }
+  ],
+  "moves: [
+    {
+      "type":
+      "player_num": ,
+      "piece_num":  ,
+      "permutation": ,
+      "x": ,
+      "y": 
+    }
+  ],
+  expect: []
+}
+```
+The list of moves is formatted as described above.
 
-**Move type:** a regular move (1) or a "give up" move (0)
+The board is a list of pieces - described by:
 
-**Move:** for a regular move described by 5 parameters - player, piece number, permutation, x-coordinate and y-coordinate, which are seperated by `,`. For a give up move describes the player number. 
+1. player_num - the number describing the player who performs the move.
+2. piece_num - the number describing the piece that is added to the board
+3. permutation - a number describing the rotation of the piece
+4. x and y - the coordinates on the board to locate the piece
 
-**Result** describes the lines that are added to the board after the move is performed. Different lines are seperated by `//`, 2 points on the same line are seperated by `-`, and x-coordinate is seperated from y-coordinate by `,` for each point. *Note:* for a give up move this should always be empty
+You can add pieces to the board to start the test from a specific initial board, otherwise leave the board empty to start a test from an empty board.
 
-**Status code** describes the meaning of result of the move:
+The expect list is a list of expacted status codes that will be returned by each move call (each move in the moves list)
+
+**Status codes** are described as follows:
 1. -1 is for an error
 2. 0 is for a successful pass_turn move
 3. 1 represents that the player has another move
@@ -124,23 +186,65 @@ In every file, each line represents a move, and consists of 4 parts - move type,
 
 **Example:**
 
-In test1, we have the line:
+Let's look at the `load_board.json` test:
 
-`1||1,9,1,16,16||16,14-16,15//15,15-16,15//15,15-15,16||1`
+```
+{
+  "board": [
+    {
+      "player_num": 4,
+      "piece_num": 13,
+      "permutation": 4,
+      "x": 15,
+      "y": 15
+    },
+    {
+      "player_num": 1,
+      "piece_num": 9,
+      "permutation": 1,
+      "x": 16,
+      "y": 16
+    },
+    {
+      "player_num": 1,
+      "piece_num": 5,
+      "permutation": 2,
+      "x": 17,
+      "y": 15
+    }
+  ],
+  "moves": [
+      {
+        "type": 1,
+        "player_num": 1,
+        "piece_num": 8,
+        "permutation": 4,
+        "x": 13,
+        "y": 15
+      },
+      {
+        "type": 0,
+        "player_num": 2
+      },
+      {
+        "type": 1,
+        "player_num": 3,
+        "piece_num": 5,
+        "permutation": 7,
+        "x": 15,
+        "y": 16
+      }
+  ],
+  "expect": [2, 0, -1]
+}
+```
 
-Let's Explain this line:
+In this test we want to have an initial board that contains 3 pieces - piece 13 of player 4, piece 9 of player 1 and piece 5 of player 1.
+The pieces locaion and permutatiom is described by the permutation, x, y fields.
 
-As described above, we seperate the line to 4 parts, seperated by `||`:
-
-1. Move type is 1 - which means we execute a regular move.
-
-2. The move is `1,9,1,16,16` - this means that the move was performed by player 1, using piece number 4, and laying it in location `16,16` without rotating or flipping it.
-
-3. result is `16,14-16,15//15,15-16,15//15,15-15,16`, which are the lines that we expect that will be added to the board. In this case, we expect a line between `16,14` and `16,15`, a line between `15,15` and `16,15`, and a line between `15,15` and `15,16` to be added to the board.
-
-4. Status code is 1, so we expect player 1 to have another turn.
+We then perform 3 moves - and we expect the first move to return 2, the second move to return 0 and the third to return -1.
 ### Add a new test:
 
-Just create a new txt file, for example test5.txt, and write the moves as described above.
+Just create a new txt file, for example `test5.json`, and write the board, moves and expect as described above.
 *Note*: the first move is constructed a bit differently, it has only 2 arguments - the piece and the permutation, since the player is known (the last player) and also the location (15,15).
 *Another Note*: you must add the file to tests folder in order for it to run.

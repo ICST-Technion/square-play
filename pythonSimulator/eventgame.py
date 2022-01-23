@@ -2,6 +2,7 @@ from player import Player
 from board import Board
 import logging
 import json
+import os
 
 
 class EventGame:
@@ -29,10 +30,12 @@ class EventGame:
         board = Board()
         for piece in data:
             if not board.add_piece(player_num=piece["player_num"],
-                        piece_num=piece["piece_num"], permutation_index=piece["permutation"],
+                        piece_num=piece["piece_num"],
+                        permutation_index=piece["permutation"],
                         coordinates=(piece["x"], piece["y"]), check=False):
                 return (board, 0)
-            self.players[piece["player_num"]-1].remove_piece(piece["piece_num"])
+            player_num = piece["player_num"]-1
+            self.players[player_num].remove_piece(piece["piece_num"])
         return (board, 1)
 
 
@@ -42,13 +45,13 @@ class EventGame:
             if move["type"] == 0:
                 result = self.pass_turn(move["player_num"])
                 results.append(result)
-                if result == -1:
-                    return results
-            else:
-                result = self.move(move["player_num"], move["piece_num"], move["permutation"], move["x"], move["y"])
+            elif move["type"] == 1:
+                result = self.move(move["player_num"], move["piece_num"],
+                                move["permutation"], move["x"], move["y"])
                 results.append(result)
-                if result == -1:
-                    return results
+            else:
+                logging.error("unsupported move type")
+                results.append(-1)
         return results
 
 
@@ -57,7 +60,7 @@ class EventGame:
             data = json.load(game_json)
         moves = data["moves"]
         board = data["board"]
-        if board > 0:
+        if board:
             self.start_game()
             (board, error) = self.build_board(data["board"])
             if error == 0:
@@ -67,7 +70,8 @@ class EventGame:
             return self.execute_moves(moves, False)
         else:
             first_move = moves[0]
-            if self.start_game(first_move["piece_num"], first_move["permutation"]) == -1:
+            if self.start_game(first_move["piece_num"],
+                                first_move["permutation"]) == -1:
                 self.started = False
                 return -1
             moves = moves[1:]
@@ -76,7 +80,7 @@ class EventGame:
 
     def store_game(self, game_file):
         dict = { "board": [], "moves": self.good_moves }
-        with open(game_file, "w") as game_json:
+        with open(os.path.join("./saved_games", game_file), "w") as game_json:
             json.dump(dict, game_json, indent=4)
         self.started = False
              
