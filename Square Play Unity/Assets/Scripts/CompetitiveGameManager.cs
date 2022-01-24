@@ -13,73 +13,79 @@ using System;
 public class CompetitiveGameManager : MonoBehaviour
 {
     public BoardClass board;
-	public ShapesManager shapesManager;
+    public ShapesManager shapesManager;
     public GameObject notification;
-    public competitveGameCanvasScript canvas;
+    public gameCanvasScript canvas;
 
     [HideInInspector]
     public int scaleFactor = 33;
     private int cols = 33;
     private int rows = 33;
-    
-    public string[] playernames=new string[4];
-    
+
+    public PlayerClass[] players;
+
     // Use this for initialization
     void Start()
     {
+        /*var proc = new System.Diagnostics.Process();
+        proc.StartInfo.FileName = "C:/Users/jonat/Documents/Technion/Final_Project/square-play/Python_Simulator/dist/main";
+        proc.Start();*/
         this.setupSocket();
-
-        this.randomizePlayerNames();
 
         board.generate(cols, rows); //give that board instance access to the python comm functions, via the socket interface
 
-        //shapesManager.temporarySetup(board,this);//TBD: change to setup
-        shapesManager.Setup(this.board,this);
+        shapesManager.Setup(this.board, this);
     }
 
-    public void randomizePlayerNames(){
-        string[] possibleNames={"Jonatan","Mai","Hadi","Daniel","Ron","Elazar","Moshe"};
-        List<int> usedIndexes=new List<int>();
-        System.Random rand =new System.Random();
+    public void randomizePlayerNames()
+    {
+        string[] possibleNames = { "Jonatan", "Mai", "Hadi", "Daniel", "Ron", "Elazar", "Moshe", "Roey", "Amit" };
+        List<int> usedIndexes = new List<int>();
+        System.Random rand = new System.Random();
         for (int i = 0; i < 4; i++)
         {
             var idx = rand.Next(possibleNames.Length);
-            while(usedIndexes.Contains(idx)){
+            while (usedIndexes.Contains(idx))
+            {
                 idx = rand.Next(possibleNames.Length);
             }
             usedIndexes.Add(idx);
-            this.playernames[i]=possibleNames[idx];
+            this.players[i].playerName = possibleNames[idx];
         }
     }
 
-    private IEnumerator announceNotification(string notificationMsg){
-        print("the notification to be shown:"+notificationMsg);
+    private IEnumerator announceNotification(string notificationMsg)
+    {
+        print("the notification to be shown:" + notificationMsg);
         this.notification.gameObject.SetActive(true);
-        this.notification.GetComponent<TextMeshProUGUI>().text=notificationMsg;
-        yield return new WaitForSeconds(5);
+        this.notification.GetComponent<TextMeshProUGUI>().text = notificationMsg;
+        yield return new WaitForSeconds(3);
         this.notification.gameObject.SetActive(false);
-        this.notification.GetComponent<TextMeshProUGUI>().text="";
+        this.notification.GetComponent<TextMeshProUGUI>().text = "";
     }
 
-    public void showNotification(string msg){
-       StartCoroutine(this.announceNotification(msg));
+    public void showNotification(string msg)
+    {
+        StartCoroutine(this.announceNotification(msg));
     }
-    public void startGame(){
-        this.showNotification(playernames[3]+", choose the piece you'd like to put in the middle of the board");
+    public void startGame()
+    {
+        this.showNotification(players[3].playerName + ", choose the piece you'd like to put in the middle of the board");
         this.shapesManager.startGame();
     }
 
-    public void playAgain()
-    {
-        SceneManager.LoadScene(1);
-    }
-
-    public void goBack()
-    {
-        SceneManager.LoadScene(0);
-    }
 
     #region python communcation
+
+    /*
+for a real player move: 
+From Unity: [x position, y position, permutation, player num,shape num]
+Response from Backend: [ number that indicates whether the move was legal,number of squares closed]
+
+for ai player move: 
+From Unity: [player num]
+Response from Backend: [ shape num,permutation,x position, y position, number of squares closed]
+*/
     public string ip = "127.0.0.1";
     public int port = 60000;
     private Socket client;
@@ -101,37 +107,50 @@ public class CompetitiveGameManager : MonoBehaviour
     private void endSocket()
     {
         client.Close();
+        Debug.Log("Disconnected");
     }
-    
 
-    private void printDataIn(){
-         print("Received from logic: ");
+    void OnApplicationQuit()
+    {
+        print("bye!");
+        sendActionCode(-1, true);
+        endSocket();
+    }
+
+
+    private void printDataIn()
+    {
+        print("Received from logic: ");
         for (int i = 0; i < this.dataIn.Length; i++)
         {
             Debug.Log(this.dataIn[i]);
         }
     }
 
-    private void printDataOut(){
-         print("Data sent to logic: ");
+    private void printDataOut()
+    {
+        print("Data sent to logic: ");
         for (int i = 0; i < this.dataOut.Length; i++)
         {
             Debug.Log(this.dataOut[i]);
         }
     }
 
-    private void sendActionCode(int code,bool setupSock=true){
-        if(setupSock){
+    private void sendActionCode(int code, bool setupSock = true)
+    {
+        if (setupSock)
+        {
             this.setupSocket();
         }
         //convert floats to bytes, send to port
-        var action_code =  new int[1]{code};
+        var action_code = new int[1] { code };
         var byteArray = new byte[action_code.Length * 4];
         Buffer.BlockCopy(action_code, 0, byteArray, 0, byteArray.Length);
         client.Send(byteArray);
     }
 
-    private int[] receiveResponse(){
+    private int[] receiveResponse()
+    {
         //allocate and receive bytes
         byte[] bytes = new byte[4000];
         int idxUsedBytes = client.Receive(bytes);
@@ -143,19 +162,21 @@ public class CompetitiveGameManager : MonoBehaviour
         return response;
     }
 
-    public int msgMoveToServer(int playerNum,int pieceNum, int permutation,int new_position_x,int new_position_y)
-    {   
+    public int[] msgMoveToServer(int playerNum, int pieceNum, int permutation, int new_position_x, int new_position_y)
+    {
         try
         {
-        this.dataOut = new int[5]{playerNum, pieceNum, permutation, new_position_x,new_position_y};
-        this.dataIn = sendMoveMsg();
-        this.printDataIn();
-        return this.dataIn[0];
-        } catch (Exception e){
+            this.dataOut = new int[5] { playerNum, pieceNum, permutation, new_position_x, new_position_y };
+            this.dataIn = sendMoveMsg();
+            this.printDataIn();
+            return this.dataIn;
+        }
+        catch (Exception e)
+        {
             Debug.Log("An exception occourd in sending move to server!\n The exception is:");
             Debug.Log(e);
             this.endSocket();
-            return -1;
+            return new int[] { -1 };
         }
     }
     private int[] sendMoveMsg()
@@ -174,14 +195,16 @@ public class CompetitiveGameManager : MonoBehaviour
     }
 
     public int msgGameStartToServer(int shapeNum, int permutation)
-    {   
+    {
         try
         {
-        this.dataOut = new int[2]{shapeNum, permutation};
-        this.dataIn = sendGameStartMsg();
-        this.printDataIn();
-        return this.dataIn[0];
-        } catch (Exception e){
+            this.dataOut = new int[2] { shapeNum, permutation };
+            this.dataIn = sendGameStartMsg();
+            this.printDataIn();
+            return this.dataIn[0];
+        }
+        catch (Exception e)
+        {
             Debug.Log("An exception occourd in sending move to server!\n The exception is:");
             Debug.Log(e);
             this.endSocket();
@@ -205,11 +228,14 @@ public class CompetitiveGameManager : MonoBehaviour
 
     public int msgNamesToServer()
     {
-        try{
-        this.dataIn = sendNamesMsg();
-        this.printDataIn();
-        return this.dataIn[0];
-        }  catch (Exception e){
+        try
+        {
+            this.dataIn = sendNamesMsg();
+            this.printDataIn();
+            return this.dataIn[0];
+        }
+        catch (Exception e)
+        {
             Debug.Log("An exception occourd in sending names to server!\n The exception is:");
             Debug.Log(e);
             this.endSocket();
@@ -220,25 +246,58 @@ public class CompetitiveGameManager : MonoBehaviour
 
     private int[] sendNamesMsg()
     {
-        sendActionCode(0,false);
+        sendActionCode(0, false);
         this.printDataOut();
 
-        string concatenatedNames="";
-        for (int i = 0; i < this.playernames.Length; i++)
+        string concatenatedNames = "";
+        for (int i = 0; i < this.players.Length; i++)
         {
-            string stringToInsert = this.playernames[i]+",";
-            if(i==this.playernames.Length-1){
-                stringToInsert= this.playernames[i];
+            string stringToInsert = this.players[i].playerName + ",";
+            if (i == this.players.Length - 1)
+            {
+                stringToInsert = this.players[i].playerName;
             }
-            concatenatedNames+=stringToInsert;
+            concatenatedNames += stringToInsert;
         }
 
-        var byteArray =new byte[concatenatedNames.Length];
-        for (int i = 0; i < concatenatedNames.Length; i++) { 
-            byteArray[i] = Convert.ToByte(concatenatedNames[i]); 
-        } 
+        var byteArray = new byte[concatenatedNames.Length];
+        for (int i = 0; i < concatenatedNames.Length; i++)
+        {
+            byteArray[i] = Convert.ToByte(concatenatedNames[i]);
+        }
         client.Send(byteArray);
-        
+
+        return this.receiveResponse();
+    }
+
+    public int[] msgAiMoveRequestToServer(int playerNum)
+    {
+        try
+        {
+            this.dataOut = new int[1] { playerNum };
+            this.dataIn = sendAiMoveRequestMsg();
+            this.printDataIn();
+            return this.dataIn;
+        }
+        catch (Exception e)
+        {
+            Debug.Log("An exception occourd in sending names to server!\n The exception is:");
+            Debug.Log(e);
+            this.endSocket();
+            return new int[] { -1 };
+        }
+    }
+
+
+    private int[] sendAiMoveRequestMsg()
+    {
+        sendActionCode(3);
+        this.printDataOut();
+
+        var byteArray = new byte[this.dataOut.Length * 4];
+        Buffer.BlockCopy(this.dataOut, 0, byteArray, 0, byteArray.Length);
+        client.Send(byteArray);
+
         return this.receiveResponse();
     }
     #endregion

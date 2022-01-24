@@ -5,12 +5,11 @@ using UnityEngine.UI;
 
 public class SixClass : BaseShape
 {
-    public override void Setup(Color newTeamColor, Color32 newSpriteColor, int teamN,ShapesManager newPieceManager, Vector3 startingPos)
+    public override void Setup(Color newTeamColor, ShapesManager newPieceManager)
     {
-        base.Setup(newTeamColor, newSpriteColor, teamN,newPieceManager,startingPos);
-
-        Debug.Log(this.name);
+        base.Setup(newTeamColor, newPieceManager);
 
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
+
     }
 }

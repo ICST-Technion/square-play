@@ -14,7 +14,7 @@ public class BoardClass : MonoBehaviour
 
     private CoordinatesComparer my_comparer;
 
-	private int scaleFactor = 33;
+    private int scaleFactor = 33;
 
     //public Material cell_material;//tbd
 
@@ -59,17 +59,17 @@ public class BoardClass : MonoBehaviour
         }
 
 
-		float newX = -rows / 2 + 1 / 2;
+        float newX = -rows / 2 + 1 / 2;
         float newY = -cols / 2 + 1 / 2;
-		transform.localPosition= new Vector3(newX*scaleFactor, newY*scaleFactor, 0);
-		transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+        transform.localPosition = new Vector3(newX * scaleFactor, newY * scaleFactor, 0);
+        transform.localScale = new Vector3(scaleFactor, scaleFactor, 1);
     }
 
     CellClass createCell(int posx, int posy)
     {
         CellClass newCell = Instantiate(cellPrefab) as CellClass;
         //newCell.GetComponent<MeshRenderer>().material = cell_material;
-        newCell.setupPos(posx,posy);
+        newCell.setupPos(posx, posy);
 
         newCell.transform.SetParent(transform, false);
         newCell.transform.localPosition = new Vector3(posx, posy, 0);
@@ -79,12 +79,13 @@ public class BoardClass : MonoBehaviour
         return newCell;
     }
 
-	public bool isInBoard(Vector3 position){
-		//Checks wheter a given point is inside the board.
-		float x = position.x;
-		float y = position.y;
-		return coordinatesToCell(x,y) != -1;
-	}
+    public bool isInBoard(Vector3 position)
+    {
+        //Checks wheter a given point is inside the board.
+        float x = position.x;
+        float y = position.y;
+        return coordinatesToCell(x, y) != -1;
+    }
 
     private int coordinatesToCell(float x, float y)
     {
@@ -93,12 +94,13 @@ public class BoardClass : MonoBehaviour
         return this.coordinatesToCellIndex.GetValueOrDefault(toLowerLeft, -1);
     }
 
-	public CellClass getCellByCoordinates(Vector3 position){
-		//Assume isInBoard is called before that function.
-		float x = position.x;
-		float y = position.y;
-		int idx = coordinatesToCell(x,y);
-		return this.cells[idx];
-	}
+    public CellClass getCellByCoordinates(Vector3 position)
+    {
+        //Assume isInBoard is called before that function.
+        float x = position.x;
+        float y = position.y;
+        int idx = coordinatesToCell(x, y);
+        return this.cells[idx];
+    }
 }
 
