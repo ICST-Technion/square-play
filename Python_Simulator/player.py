@@ -1,4 +1,3 @@
-
 """
 Each Player has a set of 16 pieces.
 
@@ -6,15 +5,18 @@ Each player also has a counter of how many moves he has left in the turn.
 The players turn ends when the number of moves left is zero
 
 """
-
+import ai_player
 
 class Player:
-    def __init__(self, name="Default Name"):
+    def __init__(self, name="Default Name", ai=False):
         self.name = name
         self.pieces = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
         self.moves = 0
         self.turns_played = 0
-
+        self.ai_player = ai
+        self.oracle = None
+        if self.ai_player:
+            self.oracle = ai_player.Ai_player("easy", 10)
 
     def check_piece(self, num):
         if num in self.pieces:
