@@ -20,6 +20,7 @@ class EventGame:
         self.curr_player_num = len(players)  # the player number who's turn it is
         self.final_round_cnt = -1
         self.game_finished = False
+        self.last_new_squares = -1
 
     def start_game(self, piece_num, permutation):
         if self.game_finished:
@@ -118,6 +119,7 @@ class EventGame:
                                                                             (x_coor, y_coor)):
             curr_player.remove_piece(piece_num)
             new_squares = self.game_board.count_new_squares()
+            self.last_new_squares = new_squares
 
             if new_squares != 0:
                 curr_player.add_moves(new_squares - 1)

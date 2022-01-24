@@ -438,7 +438,7 @@ class Ai_player:
 
     def calc_move(self, board, players_pieces, current_player_idx):
         no_need_2_calc = True
-        if board.new_board:  # put first piece for new bord
+        if board.new_board:  # put first piece for new board
             return 15, 1, 15, 15
         players_pieces_cpy = copy.deepcopy(players_pieces)
         players_pieces_cpy_again = copy.deepcopy(players_pieces)
