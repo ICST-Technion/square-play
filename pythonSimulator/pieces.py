@@ -1,3 +1,5 @@
+import logging
+
 """
 Here we define pieces and their base coordinates
 
@@ -12,7 +14,7 @@ class Piece:
         if 1 <= piece_num <= 16:
             self.num = piece_num
         else:
-            print("Illegal piece entered")
+            logging.error("Illegal piece entered")
             return
         """
         notice that the only possible new squares after a piece placement are the squares that share an edge with

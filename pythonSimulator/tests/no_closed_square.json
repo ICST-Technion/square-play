@@ -1,0 +1,81 @@
+{
+    "board": [
+        {
+            "player_num": 4,
+            "piece_num": 13,
+            "permutation": 4,
+            "x": 15,
+            "y": 15
+        },
+        {
+            "player_num": 1,
+            "piece_num": 13,
+            "permutation": 2,
+            "x": 16,
+            "y": 14
+        },
+        {
+            "player_num": 2,
+            "piece_num": 5,
+            "permutation": 2,
+            "x": 17,
+            "y": 15
+        },
+        {
+            "player_num": 2,
+            "piece_num": 4,
+            "permutation": 1,
+            "x": 15,
+            "y": 17
+        },
+        {
+            "player_num": 1,
+            "piece_num": 5,
+            "permutation": 1,
+            "x": 16,
+            "y": 18
+        },
+        {
+            "player_num": 3,
+            "piece_num": 13,
+            "permutation": 1,
+            "x": 17,
+            "y": 19
+        }
+    ],
+    "moves": [
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 15,
+            "permutation": 4,
+            "x": 17,
+            "y": 17
+        },
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 15,
+            "permutation": 4,
+            "x": 17,
+            "y": 19
+        },
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 15,
+            "permutation": 4,
+            "x": 20,
+            "y": 21
+        },
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 15,
+            "permutation": 1,
+            "x": 15,
+            "y": 19
+        }
+    ],
+    "expect": [-1, -1, -1, -1]
+}
