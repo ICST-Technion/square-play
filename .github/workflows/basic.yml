@@ -33,4 +33,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest ./pythonSimulator/run_tests.py
+        python -m unittest discover -s ./pythonSimulator -p 'run_*.py'
