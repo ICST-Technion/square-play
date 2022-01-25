@@ -18,7 +18,7 @@ public class ShapesManager : MonoBehaviour
     public float spacingFactor;
 
     //[HideInInspector]
-    public int numOfMovesForCurrentPlayer = 0;
+    private int numOfMovesForCurrentPlayer = 0;
 
     public int gameScale = 33;
 
@@ -33,6 +33,8 @@ public class ShapesManager : MonoBehaviour
     public Transform canvasTrans;
 
     public GameObject showRotationsForShape;
+
+    public bool isFirstTurn;
 
     private string[] shapeOrder = new string[16]
     {
@@ -55,7 +57,7 @@ public class ShapesManager : MonoBehaviour
     {
         this.gameManager = gM;
         this.boardtrans = this.gameManager.board.transform;
-        this.canvasTrans = this.gameManager.canvas.transform;
+        this.canvasTrans = this.gameManager.gameCanvas.transform;
         this.gameScale = this.gameManager.scaleFactor;
         this.spacingFactor = 2.35f * (this.gameManager.scaleFactor + 10);
 
@@ -66,6 +68,10 @@ public class ShapesManager : MonoBehaviour
         setupShapes(Color.red, gameManager.players[2], isDown: true);
 
         setupShapes(Color.green, gameManager.players[3]);
+
+        /*Rotations test:
+        this.numOfPossiblePermutations = 2;
+        gameManager.players[3].playerShapes[3].showPossibleRotations();*/
     }
 
     private void setupShapes(Color teamColor, PlayerClass bank, bool isUp = false, bool isDown = false)
@@ -95,25 +101,8 @@ public class ShapesManager : MonoBehaviour
 
         bank.playerShapes.ForEach(delegate (BaseShape shape)
         {
-            /*BaseShape shape = Instantiate(orig);
-            var rem = new char[] { '(', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
-            shape.name = orig.name.Trim(rem);
-            if (shape.name.Contains("shape"))
-            {
-                shape.name += '3';
-            }
-            shape.name += "_" + playerNum;*/
-            //shape.GetComponent<BoxCollider2D>().isTrigger = true;
-            int i = 0;
-
-            /*for (int j = 0; j < shape.transform.childCount; j++)
-            {
-                shape.transform.GetChild(j).name = "p" + playerNum + " " + shape.name + "line" + i;
-                //shape.transform.GetChild(j).gameObject.AddComponent<BoxCollider2D>();
-                //shape.transform.GetChild(j).GetComponent<BoxCollider2D>().isTrigger = false;
-                i++;
-            }*/
             //Later: transfer the starting position to setup too.
+            //shape.GetComponent<BoxCollider2D>().isTrigger = false;
             shape.Setup(teamColor, this);
             float new_x = absoluteX + x_add * spacingFactor;
             float new_y = absoluteY - y_add * spacingFactor;
@@ -130,6 +119,8 @@ public class ShapesManager : MonoBehaviour
             {
                 y_add++;
             }
+
+
         });
     }
 
@@ -142,24 +133,37 @@ public class ShapesManager : MonoBehaviour
         this.gameManager.showNotification("Youv'e made an illegal move!");
     }
 
+    public void currentPlayerClosedSquares(int numberClosed)
+    {
+        if (numberClosed > 1)
+        {
+            this.numOfMovesForCurrentPlayer += numberClosed - 1;
+        }
+    }
+
     private void setInteractive(List<BaseShape> allShapes, bool value)
     {
-        print(value);
-        print(this.isHeHuman());
         if (!this.isHeHuman() && value)
         {
-            print("move for ai");
             int[] aiMove = this.requestAiMove();
-            MoveShapeForAi(aiMove, allShapes);
+            if (aiMove.Length > 2)
+            {
+                MoveShapeForAi(aiMove, allShapes);
+                if (this.isFirstTurn)
+                {
+                    print("hey");
+                    this.endFirstMove();
+                }
+            }
         }
-        else
+        /*else
         {
             allShapes.ForEach(delegate (BaseShape shape)
             {
-                shape.GetComponent<BoxCollider2D>().isTrigger = value;
+                //shape.GetComponent<BoxCollider2D>().isTrigger = value;
                 shape.isPlayable = value;
             });
-        }
+        }*/
     }
 
     private void MoveShapeForAi(int[] aiMove, List<BaseShape> allShapes)
@@ -168,7 +172,7 @@ public class ShapesManager : MonoBehaviour
         int newY = aiMove[1];
         int shapeNum = aiMove[2];
         int permutation = aiMove[3];
-        this.numOfMovesForCurrentPlayer = aiMove[4] - 1;
+        this.currentPlayerClosedSquares(aiMove[4] - 1);
         allShapes.ForEach(delegate (BaseShape shape)
         {
             if (shape.piece_num == shapeNum)
@@ -209,22 +213,17 @@ public class ShapesManager : MonoBehaviour
     {
         this.currentPlayer = 2;
         this.numOfMovesForCurrentPlayer = 1;
+        this.isFirstTurn = true;
         this.switchTurn();
-        this.gameManager.players[3].playerShapes.ForEach(delegate (BaseShape shape)
-        {
-            shape.isFirstTurn = true;
-            shape.isPlayable = true;
-        });
+
     }
 
     private void endFirstMove()
     {
         this.numOfMovesForCurrentPlayer = 0;
+        this.isFirstTurn = false;
         this.switchTurn();
-        this.gameManager.players[3].playerShapes.ForEach(delegate (BaseShape shape)
-        {
-            shape.isFirstTurn = false;
-        });
+
     }
 
     public int getPieceNumByType(string shapeClassName)
@@ -245,10 +244,11 @@ public class ShapesManager : MonoBehaviour
 
 
     #region Backend communication
-    public int sendStartGame(int shapeNum, int permutation)
+    public int[] sendStartGame(int shapeNum, int permutation)
     {
+        var res = this.gameManager.msgGameStartToServer(shapeNum, permutation);
         this.endFirstMove();
-        return this.gameManager.msgGameStartToServer(shapeNum, permutation);
+        return res;
     }
 
     public int[] sendMove(int shapeNum, int permutation, int new_position_x, int new_position_y) => this.gameManager.msgMoveToServer(this.currentPlayer + 1, shapeNum, permutation, new_position_x, new_position_y);
@@ -259,7 +259,7 @@ public class ShapesManager : MonoBehaviour
 
     public int[] requestAiMove() => this.gameManager.msgAiMoveRequestToServer(this.currentPlayer);
 
-    public bool isHeHuman() => !this.gameManager.players[this.currentPlayer].isAi;
+    public bool isHeHuman() => !this.gameManager.players[this.currentPlayer].isAi; //true if the current player isnt Ai player
 
     #endregion
 
@@ -304,6 +304,30 @@ public class ShapesManager : MonoBehaviour
 
     #region shape creation
     //For tests only:
+    /*
+    this goes into the loop in setupShapes:
+    orig.shapeManager = this;
+            BaseShape shape = Instantiate(orig);
+            orig.transform.localPosition = new Vector3(-4000, -4000);
+            //var rem = new char[] { '(', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
+            //shape.name = orig.name.Trim(rem);
+            //Destroy(orig);
+            /*if (shape.name.Contains("shape"))
+            {
+                shape.name += '3';
+            }
+            shape.name += "_" + playerNum;
+            shape.GetComponent<BoxCollider2D>().isTrigger = true;
+            int i = 0;
+
+            for (int j = 0; j < shape.transform.childCount; j++)
+            {
+                shape.transform.GetChild(j).name = "p" + playerNum + " " + shape.name + "line" + i;
+                //shape.transform.GetChild(j).gameObject.AddComponent<BoxCollider2D>();
+                //shape.transform.GetChild(j).GetComponent<BoxCollider2D>().isTrigger = false;
+                i++;
+            }
+    */
     /*private void initShapesPrefabs()
     {
         shapeLibrary["E"] = (((EClass)AssetDatabase.LoadAssetAtPath("Assets/Prefabs/Shapes/E.prefab", typeof(EClass))), shapeLibrary["E"].Item2);

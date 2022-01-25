@@ -15,7 +15,9 @@ public class CompetitiveGameManager : MonoBehaviour
     public BoardClass board;
     public ShapesManager shapesManager;
     public GameObject notification;
-    public gameCanvasScript canvas;
+    public gameCanvasScript gameCanvas;
+
+    public competitveGameCanvasScript preCanvas;
 
     [HideInInspector]
     public int scaleFactor = 33;
@@ -30,11 +32,20 @@ public class CompetitiveGameManager : MonoBehaviour
         /*var proc = new System.Diagnostics.Process();
         proc.StartInfo.FileName = "C:/Users/jonat/Documents/Technion/Final_Project/square-play/Python_Simulator/dist/main";
         proc.Start();*/
-        this.setupSocket();
 
+        /*Test: 
+        this.players[3].playerShapes[2].shapeManager = shapesManager;
+        this.players[3].playerShapes[2].showPossibleRotations();*/
+
+        /*Disable for tests only!!!! 
+        also, dont foregt to delete whats for test in shapes manager and to set visible the pre game canvas*/
+        this.setupSocket();
+        this.randomizePlayerNames();//for test only
         board.generate(cols, rows); //give that board instance access to the python comm functions, via the socket interface
 
         shapesManager.Setup(this.board, this);
+        this.msgNamesToServer();//for test only
+        this.startGame();//for test only
     }
 
     public void randomizePlayerNames()
@@ -127,9 +138,9 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
     }
 
-    private void printDataOut()
+    private void printDataOut(string str = "Data")
     {
-        print("Data sent to logic: ");
+        print(str + " sent to logic: ");
         for (int i = 0; i < this.dataOut.Length; i++)
         {
             Debug.Log(this.dataOut[i]);
@@ -183,7 +194,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     {
         //send the action code.
         sendActionCode(2);
-        this.printDataOut();
+        this.printDataOut("Move");
 
         //setup the actual data and send it.
         var byteArray = new byte[this.dataOut.Length * 4];
@@ -194,28 +205,28 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         return this.receiveResponse();
     }
 
-    public int msgGameStartToServer(int shapeNum, int permutation)
+    public int[] msgGameStartToServer(int shapeNum, int permutation)
     {
         try
         {
             this.dataOut = new int[2] { shapeNum, permutation };
             this.dataIn = sendGameStartMsg();
             this.printDataIn();
-            return this.dataIn[0];
+            return this.dataIn;
         }
         catch (Exception e)
         {
             Debug.Log("An exception occourd in sending move to server!\n The exception is:");
             Debug.Log(e);
             this.endSocket();
-            return -1;
+            return new int[] { -1 };
         }
     }
     private int[] sendGameStartMsg()
     {
         //send the action code.
         sendActionCode(1);
-        this.printDataOut();
+        this.printDataOut("Game start");
 
         //setup the actual data and send it.
         var byteArray = new byte[this.dataOut.Length * 4];
@@ -238,7 +249,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         {
             Debug.Log("An exception occourd in sending names to server!\n The exception is:");
             Debug.Log(e);
-            this.endSocket();
+            this.OnApplicationQuit();
             return -1;
         }
     }
@@ -247,19 +258,24 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     private int[] sendNamesMsg()
     {
         sendActionCode(0, false);
-        this.printDataOut();
 
         string concatenatedNames = "";
-        for (int i = 0; i < this.players.Length; i++)
+        foreach (var player in this.players)
         {
-            string stringToInsert = this.players[i].playerName + ",";
-            if (i == this.players.Length - 1)
+            string stringToInsert = player.playerName;
+            if (player.isAi)
             {
-                stringToInsert = this.players[i].playerName;
+                stringToInsert += "_AI_Player";
+            }
+
+            if (player.playerNum != this.players.Length)
+            {
+                stringToInsert += ",";
             }
             concatenatedNames += stringToInsert;
-        }
 
+        }
+        print("Names sent to logic: " + concatenatedNames);
         var byteArray = new byte[concatenatedNames.Length];
         for (int i = 0; i < concatenatedNames.Length; i++)
         {
@@ -281,7 +297,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending names to server!\n The exception is:");
+            Debug.Log("An exception occourd in sending ai move request to server!\n The exception is:");
             Debug.Log(e);
             this.endSocket();
             return new int[] { -1 };
@@ -292,12 +308,11 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     private int[] sendAiMoveRequestMsg()
     {
         sendActionCode(3);
-        this.printDataOut();
+        this.printDataOut("Ai move request");
 
         var byteArray = new byte[this.dataOut.Length * 4];
         Buffer.BlockCopy(this.dataOut, 0, byteArray, 0, byteArray.Length);
         client.Send(byteArray);
-
         return this.receiveResponse();
     }
     #endregion

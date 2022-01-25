@@ -4,7 +4,8 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 //using UnityEngine.;
 
-public abstract class BaseShape : MonoBehaviour
+public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
+ IPointerExitHandler, IPointerEnterHandler
 {
 
 
@@ -25,11 +26,11 @@ public abstract class BaseShape : MonoBehaviour
     protected int permutation = 1;
 
     public bool isFinalPos = false;
-    //[HideInInspector]
-    public bool isPlayable = false;
-    //[HideInInspector]
-    public bool isFirstTurn = false;
-    //[HideInInspector]
+
+    public int playerNum;
+
+    //public GameObject classPrefab;
+
 
     //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
@@ -39,12 +40,37 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.SetParent(this.shapeManager.canvasTrans);
         this.transform.localScale = new Vector3(this.shapeManager.gameScale, this.shapeManager.gameScale, 0);
         this.transform.localRotation = Quaternion.identity;
-        foreach (GameObject line in this.assemblingLines)
+        /*foreach (GameObject line in this.assemblingLines)
         {
             line.GetComponent<LineRenderer>().startColor = newTeamColor;
             line.GetComponent<LineRenderer>().endColor = Color.white;
-        }
+        }*/
+        this.name.Split('_');
+        int.TryParse(this.name.Split('_')[1], out this.playerNum);
+        this.playerNum -= 1;
+        //this.gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
+    }
 
+    void Update()
+    {
+        if (Input.GetMouseButton(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit))
+            {
+                Debug.Log("Name = " + hit.collider.name);
+                Debug.Log("Tag = " + hit.collider.tag);
+                Debug.Log("Hit Point = " + hit.point);
+                Debug.Log("Object position = " + hit.collider.gameObject.transform.position);
+                Debug.Log("--------------");
+            }
+        }
+    }
+
+    void Awake()
+    {
+        print("hello! i am " + name);
     }
 
     public void setupStartPos(float x, float y)
@@ -52,6 +78,7 @@ public abstract class BaseShape : MonoBehaviour
         var pos = new Vector3(x, y);
         this.transform.localPosition = pos;
         this.startingPosition = pos;
+        //this.gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
     }
 
     #region Movement
@@ -69,10 +96,11 @@ public abstract class BaseShape : MonoBehaviour
         //Check that move is valid with logic function
         print("sending move for shape : " + this.name);
         int[] response = this.shapeManager.sendMove(piece_num, permutation, new_position_x, new_position_y);
-        /*if (response[0] != -1)
+        if (response[0] != -1)
         {
             var numOfClosed = response[1];
-        }*/
+            this.shapeManager.currentPlayerClosedSquares(numOfClosed);
+        }
         return response[0];
     }
 
@@ -85,11 +113,27 @@ public abstract class BaseShape : MonoBehaviour
 
     private int[] getRotationByPermutation(int permutation)
     {
+        //By default, there is a maximum of 8 permutations.
         switch (permutation)
         {
             case 1:
-                return new int[] { 0, 0, 90, 0 };
-
+                return new int[] { 0, 0, 270, 0 };
+            case 2:
+                return new int[] { 0, 0, -270, 0 };
+            case 3:
+                return new int[] { 0, 0, 180, 0 };
+            case 4:
+                return new int[] { 0, 180, 0, 0 };
+            case 5:
+                return new int[] { 0, 180, 270, 0 };
+            case 6:
+                return new int[] { 0, 180, -270, 0 };
+            case 7:
+                return new int[] { 180, 0, 0, 0 };
+            case 8:
+                return new int[] { 180, 0, 90, 0 };
+            case 9:
+                return new int[] { 180, 0, -90, 0 };
             default:
                 return new int[] { 0, 0, 0, 0 }; ;
         }
@@ -102,20 +146,32 @@ public abstract class BaseShape : MonoBehaviour
         var showPos = this.shapeManager.showRotationsForShape.transform.localPosition;
         float width = rect.width;
         float height = rect.height;
+        print("w: " + width.ToString() + " h: " + height.ToString());
         float offesetFromEdges = 20;
         var position = this.shapeManager.showRotationsForShape.transform;
         float x_add = 0, y_add = 0;
-        float absoluteX = showPos.x - width + offesetFromEdges;
-        float absoluteY = showPos.y - height + offesetFromEdges;
-        for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+        float absoluteX = showPos.x - width / 2 + offesetFromEdges;
+        float absoluteY = showPos.y - height / 2 + offesetFromEdges;
+        for (int i = 0; i < 10; i++) // replace 10 with this.shapeManager.numOfPossiblePermutations
         {
             x_add = i % (this.shapeManager.numOfPossiblePermutations / 2);
             y_add = x_add == 0 ? y_add + 1 : y_add;
             var pos = new Vector3(absoluteX + x_add * this.shapeManager.spacingFactor, absoluteY - y_add * this.shapeManager.spacingFactor);
+            print("pos before change: ");
+            print(pos);
+            pos = new Vector3(i * 50, i * 50);
             var qut = Quaternion.identity;
             var rot = getRotationByPermutation(i);
             qut.Set(rot[0], rot[1], rot[2], rot[3]);
-            BaseShape rotated = Instantiate(this, pos, qut, this.shapeManager.showRotationsForShape.transform);
+            /*print("w: " + width.ToString() + " h: " + height.ToString());
+            print("ax: " + absoluteX.ToString() + " ay:  " + absoluteY.ToString());
+            print("pos: " + pos.ToString());*/
+            BaseShape rotated = Instantiate(this, this.shapeManager.showRotationsForShape.transform, false);
+            //rotated.transform.SetPositionAndRotation(pos, qut);
+            rotated.transform.localPosition = pos;
+            print("rot: ");
+            print(rot);
+            rotated.transform.localEulerAngles = new Vector3(rot[0], rot[1], rot[2]);
         }
     }
 
@@ -140,7 +196,9 @@ public abstract class BaseShape : MonoBehaviour
 
     public void moveForAi(int permutation, int new_position_x, int new_position_y)
     {
+        this.transform.SetParent(this.shapeManager.canvasTrans);
         transform.localPosition = new Vector3(new_position_x, new_position_y);
+        this.nearestCell = this.getNearesetCell();
         this.rotateByPermutation(permutation);
         Place();
         this.shapeManager.switchTurn();
@@ -150,6 +208,7 @@ public abstract class BaseShape : MonoBehaviour
     private CellClass getNearesetCell()
     {
         this.transform.SetParent(this.shapeManager.boardtrans);
+        print("for position: " + this.transform.localPosition.ToString() + " got cell: ");
         var cell = this.shapeManager.getNearestCell(transform.localPosition);
         this.transform.SetParent(this.shapeManager.canvasTrans);
         return cell;
@@ -157,7 +216,7 @@ public abstract class BaseShape : MonoBehaviour
 
     private void getInitialCell()
     {
-        if (isFirstTurn)
+        if (this.shapeManager.isFirstTurn)
         {
             this.transform.SetParent(this.shapeManager.boardtrans);
             var startingPos = new Vector3(15, 15);
@@ -170,13 +229,17 @@ public abstract class BaseShape : MonoBehaviour
 
     #region Events
 
-    public void OnMouseDown()
+    public bool canBeMoved() => playerNum == this.shapeManager.currentPlayer;
+
+    public bool shapeOfHuman() => this.shapeManager.isHeHuman();//one can assume that this is always called after can be moved.
+
+    /*public void OnMouseDown()
     {
         print("touched: " + this.name);
         //This function is called once the player has started to drag the object.
-        if (!isFinalPos && isPlayable)
+        if (!isFinalPos && canBeMoved() && shapeOfHuman())
         {
-            if (!isFirstTurn)
+            if (!this.shapeManager.isFirstTurn)
             {
                 //The localposition is the objects position inside the canvas.
                 this.startingPosition = this.transform.localPosition;
@@ -200,7 +263,7 @@ public abstract class BaseShape : MonoBehaviour
     public void OnMouseUp()
     {
         //This function is called once the player has finished dragging the object, and put it down.
-        if (!isFinalPos && !isFirstTurn)
+        if (canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
             if (Move() == -1)
             {
@@ -212,11 +275,11 @@ public abstract class BaseShape : MonoBehaviour
             else
             {
                 Place();
-                
+
                 shapeManager.switchTurn();
             }
         }
-    }
+    }*/
 
     private Vector3 GetMouseAsWorldPoint()
     {
@@ -233,8 +296,9 @@ public abstract class BaseShape : MonoBehaviour
 
     public void OnMouseDrag()
     {
+        print("hey from " + name);
         //This function is called while the player drags the piece.
-        if (!isFinalPos && !isFirstTurn)
+        if (canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
             print("draggind: " + this.name);
             transform.position = GetMouseAsWorldPoint() + mOffset;
@@ -246,6 +310,23 @@ public abstract class BaseShape : MonoBehaviour
             }
         }
     }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        print("click!");
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        print("enter");
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        print("bye:(");
+    }
+
+
     #endregion
 
 }
@@ -326,4 +407,5 @@ this is for hint cells
         hintCells.Clear();
     }
 */
+
 

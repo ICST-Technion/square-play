@@ -31,4 +31,9 @@ public class gameCanvasScript : MonoBehaviour
         SceneManager.LoadScene(1);
     }
 
+    public void choseToRotate()
+    {
+
+    }
+
 }
