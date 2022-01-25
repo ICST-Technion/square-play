@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ PythonBackend ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -33,4 +33,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        python -m unittest discover -s ./pythonSimulator  -p 'run_*.py'
+        pytest ./pythonSimulator/run_tests.py
