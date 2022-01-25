@@ -59,11 +59,11 @@ class Ai_player:
                         for game_cord_y in range(0, 32):
                             new_board = copy.deepcopy(board)
                             if new_board.add_piece(current_player, piece, permutation,
-                                                   (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                   (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                 new_player_piece = copy.deepcopy(players_pieces)
                                 new_player_piece[current_player].remove(piece)
                                 turn_options.append((self.best_move_minmax_aux(new_board, new_player_piece,
-                                                                               turns_left_for_current_player - 1 + new_board.new_squares() - 1,
+                                                                               turns_left_for_current_player - 1 + new_board.count_new_squares() - 1,
                                                                                current_player)[0],
                                                      (piece, permutation, game_cord_x, game_cord_y)))
             if current_player == 0:
@@ -94,11 +94,11 @@ class Ai_player:
                         for game_cord_y in range(0, 32):
                             new_board = copy.deepcopy(board)
                             if new_board.add_piece(current_player, piece, permutation,
-                                                   (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                   (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                 new_player_piece = copy.deepcopy(players_pieces)
                                 new_player_piece[current_player].remove(piece)
                                 turn_options.append((self.best_move_depth_minmax_aux(new_board, new_player_piece,
-                                                                                     turns_left_for_current_player - 1 + new_board.new_squares() - 1,
+                                                                                     turns_left_for_current_player - 1 + new_board.count_new_squares() - 1,
                                                                                      current_player, depth)[0],
                                                      (piece, permutation, game_cord_x, game_cord_y)))
             if current_player == 0:
@@ -133,7 +133,7 @@ class Ai_player:
                             if random.random() < prob:
                                 new_board = copy.deepcopy(board)
                                 if new_board.add_piece(current_player, piece, permutation,
-                                                       (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                       (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                     new_player_piece = copy.deepcopy(players_pieces)
                                     new_player_piece[current_player].remove(piece)
                                     turn_options.append(
@@ -144,7 +144,7 @@ class Ai_player:
                 for move_option in turn_options:
                     value = self.best_move_depth_alphabeta_aux(alpha, beta, move_option[0], move_option[1],
                                                                turns_left_for_current_player - 1 + move_option[
-                                                                   0].new_squares() - 1, current_player, depth, prob)[0]
+                                                                   0].count_new_squares() - 1, current_player, depth, prob)[0]
                     best_val = max(value, best_val)
                     if best_val == value:
                         move = [move_option[i] for i in range(2, 6)]
@@ -158,7 +158,7 @@ class Ai_player:
                 for move_option in turn_options:
                     value = self.best_move_depth_alphabeta_aux(alpha, beta, move_option[0], move_option[1],
                                                                turns_left_for_current_player - 1 + move_option[
-                                                                   0].new_squares() - 1, current_player, depth, prob)[0]
+                                                                   0].count_new_squares() - 1, current_player, depth, prob)[0]
                     best_val = min(value, best_val)
                     if best_val == value:
                         move = [move_option[i] for i in range(2, 6)]
@@ -197,7 +197,7 @@ class Ai_player:
                             if random.random() < prob:
                                 new_board = copy.deepcopy(board)
                                 if new_board.add_piece(current_player, piece, permutation,
-                                                       (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                       (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                     new_player_piece = copy.deepcopy(players_pieces)
                                     new_player_piece[current_player].remove(piece)
                                     turn_options.append(
@@ -208,7 +208,7 @@ class Ai_player:
                 for move_option in turn_options:
                     value = self.best_move_depth_alphabeta_timeLimit_aux(alpha, beta, move_option[0], move_option[1],
                                                                          turns_left_for_current_player - 1 +
-                                                                         move_option[0].new_squares() - 1,
+                                                                         move_option[0].count_new_squares() - 1,
                                                                          current_player, depth, prob, start_time,
                                                                          time_limit)[0]
                     if value == "time is up":
@@ -227,7 +227,7 @@ class Ai_player:
                     value = self.best_move_depth_alphabeta_timeLimit_aux(alpha, beta, move_option[0], move_option[1],
                                                                          turns_left_for_current_player - 1 +
                                                                          move_option[
-                                                                             0].new_squares() - 1, current_player,
+                                                                             0].count_new_squares() - 1, current_player,
                                                                          depth, prob, start_time, time_limit)[0]
                     if value == "time is up":
                         return "time is up", "time is up"
@@ -327,14 +327,13 @@ class Ai_player:
                     for game_cord_x in range(x_min, x_max):
                         for game_cord_y in range(y_min, y_max):
                             if True:  # andom.random() < prob :#or True:#######################
-                                # new_board = copy.deepcopy(board)
-                                # if new_board.add_piece(current_player, piece, permutation,
-                                #                       (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                # new_board = copy.deepcopy(board) if new_board.add_piece(current_player, piece,
+                                # permutation, (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                 if board.check_piece_placement_wrapper(piece, permutation, (game_cord_x, game_cord_y),
                                                                        False):
                                     new_board = copy.deepcopy(board)
                                     if new_board.add_piece(current_player, piece, permutation,
-                                                           (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                           (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                         new_player_piece = copy.deepcopy(players_pieces)
                                         new_player_piece[current_player].remove(piece)
                                         turn_options.append(
@@ -357,7 +356,7 @@ class Ai_player:
                                                                                          move_option[1],
                                                                                          turns_left_for_current_player - 1 +
                                                                                          move_option[
-                                                                                             0].new_squares() - 1,
+                                                                                             0].count_new_squares() - 1,
                                                                                          current_player, depth, prob,
                                                                                          start_time,
                                                                                          time_limit)
@@ -383,7 +382,7 @@ class Ai_player:
                                                                                          move_option[1],
                                                                                          turns_left_for_current_player - 1 +
                                                                                          move_option[
-                                                                                             0].new_squares() - 1,
+                                                                                             0].count_new_squares() - 1,
                                                                                          current_player,
                                                                                          depth, prob, start_time,
                                                                                          time_limit)
@@ -467,7 +466,7 @@ class Ai_player:
                                                                False):
                             new_board = copy.deepcopy(board)
                             if new_board.add_piece(0, piece, permutation,
-                                                   (game_cord_x, game_cord_y)) and new_board.new_squares() > 0:
+                                                   (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
                                 return piece, permutation, game_cord_x, game_cord_y
 
     def possible_coordinates_range(self, board):
@@ -494,7 +493,7 @@ class Ai_player:
         return x_min, x_max, y_min, y_max
 
     def score_of_state_to_sort_childs(self, board):
-        score = board.new_squares()
+        score = board.count_new_squares()
         if score > 1:
             score += 0.01 * self.num_of_shpizim(board)
         return score
