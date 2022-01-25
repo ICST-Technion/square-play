@@ -222,7 +222,7 @@ class Board:
 
         return new_sq
 
-    def validate_new_squares(self, p: Piece):  # counts new squares before a move was made
+    def validate_new_squares(self, p: Piece):  # counts new squares before making a move
         future_line_list = self.line_list + [(shape_line, -1, -1) for shape_line in p.shape]
         possible_squares = p.get_possible_squares()
         return self.inner_squares_counter(possible_squares, future_line_list, p) != 0
