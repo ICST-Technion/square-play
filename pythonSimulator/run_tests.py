@@ -53,7 +53,7 @@ def parse_move(move):
 
 
 def parse_file(path):
-    f = open(os.path.join("./Python Simulator/tests", path), "r")
+    f = open(os.path.join("./pythonSimulator/tests", path), "r")
     moves_text = f.read()
     return list(map(parse_move, moves_text.splitlines()))
 
@@ -85,6 +85,6 @@ class TestSquarePlay(unittest.TestCase):
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     print(os.getcwd())
-    for filename in os.listdir("./Python Simulator/tests"):
+    for filename in os.listdir("./pythonSimulator/tests"):
         suite.addTest(TestSquarePlay('test', filename))
     unittest.TextTestRunner(verbosity=2).run(suite)
