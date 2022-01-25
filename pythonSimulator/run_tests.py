@@ -19,7 +19,7 @@ class TestSquarePlay(unittest.TestCase):
     def test(self):
         print("\n---------testing file", self.test_path, "---------")
         game = initialise_game()
-        game_path = os.path.join("./tests", self.test_path)
+        game_path = os.path.join("./pythonSimulator/tests", self.test_path)
         results = game.load_game(game_path)
         with open(game_path, "r") as game_json:
             data = json.load(game_json)
@@ -28,7 +28,7 @@ class TestSquarePlay(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    for filename in os.listdir("./tests"):
+    for filename in os.listdir("./pythonSimulator/tests"):
         if filename.endswith(".json"):
             suite.addTest(TestSquarePlay('test', filename))
     unittest.TextTestRunner(verbosity=2).run(suite)
