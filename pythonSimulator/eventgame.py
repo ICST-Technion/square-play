@@ -93,12 +93,6 @@ class EventGame:
             logging.error("Error, Game has already started")
             return -1
 
-<<<<<<< HEAD:Python_Simulator/eventgame.py
-        curr_player = self.players[-1]
-        print("current player: "+str(curr_player))
-        curr_player.add_moves()
-=======
->>>>>>> origin/PythonBackend:pythonSimulator/eventgame.py
         if not self.started:
             if piece_num != -1 and permutation != -1:
                 curr_player = self.players[-1]
