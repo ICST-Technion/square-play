@@ -165,7 +165,7 @@ public abstract class BaseShape : MonoBehaviour
         }*/
     }
 
-    /*private bool rotateMe = false;
+    private bool rotateMe = false;
 
     private bool amITheChosenPermutation = false;
     private Dictionary<BaseShape, bool> rotationsShown = new Dictionary<BaseShape, bool>();
@@ -190,7 +190,6 @@ public abstract class BaseShape : MonoBehaviour
             rotationsShown.Add(rotated, false);
         }
     }
-*/
 
     public void Place()
     {
