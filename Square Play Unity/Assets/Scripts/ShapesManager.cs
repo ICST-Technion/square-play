@@ -13,7 +13,7 @@ public class ShapesManager : MonoBehaviour
     public int currentPlayer = 2;
 
     [HideInInspector]
-    public int numOfPossiblePermutations = 9;
+    public int numOfPossiblePermutations = 8;
     [HideInInspector]
     public float spacingFactor;
 
@@ -26,7 +26,7 @@ public class ShapesManager : MonoBehaviour
 
     public GameObject turnStatisticsNumOfMoves;
 
-    private CompetitiveGameManager gameManager;
+    public CompetitiveGameManager gameManager;
     [HideInInspector]
     public Transform boardtrans;
     [HideInInspector]
@@ -88,6 +88,7 @@ public class ShapesManager : MonoBehaviour
         }
         else if (isDown)
         {
+            print("hey");
             absoluteX += 70;
             absoluteY += 75;
         }
@@ -106,7 +107,7 @@ public class ShapesManager : MonoBehaviour
             shape.Setup(teamColor, this);
             float new_x = absoluteX + x_add * spacingFactor;
             float new_y = absoluteY - y_add * spacingFactor;
-            shape.setupStartPos(new_x, new_y);
+            shape.setupStartPos(new_x, new_y, bank.transform);
             if (isUp || isDown)
             {
                 x_add = (x_add + 1) % 8;
@@ -156,22 +157,14 @@ public class ShapesManager : MonoBehaviour
                 }
             }
         }
-        /*else
-        {
-            allShapes.ForEach(delegate (BaseShape shape)
-            {
-                //shape.GetComponent<BoxCollider2D>().isTrigger = value;
-                shape.isPlayable = value;
-            });
-        }*/
     }
 
     private void MoveShapeForAi(int[] aiMove, List<BaseShape> allShapes)
     {
-        int newX = aiMove[0];
-        int newY = aiMove[1];
-        int shapeNum = aiMove[2];
-        int permutation = aiMove[3];
+        int newX = aiMove[2];
+        int newY = aiMove[3];
+        int shapeNum = aiMove[0];
+        int permutation = aiMove[1];
         this.currentPlayerClosedSquares(aiMove[4] - 1);
         allShapes.ForEach(delegate (BaseShape shape)
         {
@@ -188,6 +181,7 @@ public class ShapesManager : MonoBehaviour
         if (this.numOfMovesForCurrentPlayer <= 1)
         {
             this.currentPlayer = (currentPlayer + 1) % 4;
+            print("switched to: " + this.currentPlayer);
             this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text = this.gameManager.players[this.currentPlayer].playerName + "'s Turn:";
 
             setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);

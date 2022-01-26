@@ -4,13 +4,10 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 //using UnityEngine.;
 
-public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
- IPointerExitHandler, IPointerEnterHandler
+public abstract class BaseShape : MonoBehaviour
 {
-
-
-    private Vector3 mOffset;
-    private float mZCoord;
+    protected Vector3 mOffset;
+    protected float mZCoord;
 
     public Vector3 startingPosition;
 
@@ -23,9 +20,11 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
 
     public int piece_num;
 
-    protected int permutation = 1;
+    protected int permutation = 0;
 
     public bool isFinalPos = false;
+
+    public bool chooseCellForMe = false;
 
     public int playerNum;
 
@@ -45,40 +44,18 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
             line.GetComponent<LineRenderer>().startColor = newTeamColor;
             line.GetComponent<LineRenderer>().endColor = Color.white;
         }*/
-        this.name.Split('_');
         int.TryParse(this.name.Split('_')[1], out this.playerNum);
         this.playerNum -= 1;
         //this.gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
     }
 
-    void Update()
-    {
-        if (Input.GetMouseButton(0))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit))
-            {
-                Debug.Log("Name = " + hit.collider.name);
-                Debug.Log("Tag = " + hit.collider.tag);
-                Debug.Log("Hit Point = " + hit.point);
-                Debug.Log("Object position = " + hit.collider.gameObject.transform.position);
-                Debug.Log("--------------");
-            }
-        }
-    }
-
-    void Awake()
-    {
-        print("hello! i am " + name);
-    }
-
-    public void setupStartPos(float x, float y)
+    private Transform startTransformation;
+    public void setupStartPos(float x, float y, Transform startTrans)
     {
         var pos = new Vector3(x, y);
         this.transform.localPosition = pos;
+        this.startTransformation = startTrans;
         this.startingPosition = pos;
-        //this.gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
     }
 
     #region Movement
@@ -139,42 +116,81 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
         }
     }
 
-    public void showPossibleRotations()
+    void Update()
     {
-        this.shapeManager.showRotationsForShape.SetActive(true);
-        var rect = this.shapeManager.showRotationsForShape.gameObject.GetComponent<RectTransform>().rect;
-        var showPos = this.shapeManager.showRotationsForShape.transform.localPosition;
-        float width = rect.width;
-        float height = rect.height;
-        print("w: " + width.ToString() + " h: " + height.ToString());
-        float offesetFromEdges = 20;
-        var position = this.shapeManager.showRotationsForShape.transform;
-        float x_add = 0, y_add = 0;
-        float absoluteX = showPos.x - width / 2 + offesetFromEdges;
-        float absoluteY = showPos.y - height / 2 + offesetFromEdges;
-        for (int i = 0; i < 10; i++) // replace 10 with this.shapeManager.numOfPossiblePermutations
+        /*Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        if (Input.GetMouseButtonDown(0))
         {
-            x_add = i % (this.shapeManager.numOfPossiblePermutations / 2);
-            y_add = x_add == 0 ? y_add + 1 : y_add;
-            var pos = new Vector3(absoluteX + x_add * this.shapeManager.spacingFactor, absoluteY - y_add * this.shapeManager.spacingFactor);
-            print("pos before change: ");
-            print(pos);
-            pos = new Vector3(i * 50, i * 50);
-            var qut = Quaternion.identity;
-            var rot = getRotationByPermutation(i);
-            qut.Set(rot[0], rot[1], rot[2], rot[3]);
-            /*print("w: " + width.ToString() + " h: " + height.ToString());
-            print("ax: " + absoluteX.ToString() + " ay:  " + absoluteY.ToString());
-            print("pos: " + pos.ToString());*/
-            BaseShape rotated = Instantiate(this, this.shapeManager.showRotationsForShape.transform, false);
-            //rotated.transform.SetPositionAndRotation(pos, qut);
-            rotated.transform.localPosition = pos;
-            print("rot: ");
-            print(rot);
-            rotated.transform.localEulerAngles = new Vector3(rot[0], rot[1], rot[2]);
+            Collider2D targetObject = Physics2D.OverlapPoint(mousePosition);
+
+            if (targetObject && rotateMe)
+            {
+                print(targetObject);
+
+                int perm = 0;
+                int.TryParse(targetObject.name.Split('_')[1], out perm);
+                if (perm > 0)
+                {
+                    foreach (var item in rotationsShown)
+                    {
+                        if (item.Key.name == targetObject.name)
+                        {
+                            this.getRotationByPermutation(perm);
+                        }
+                        Destroy(item.Key);
+                    }
+                    rotateMe = false;
+                    print("chose rot!");
+                    this.shapeManager.gameManager.choosingRotationMode = false;
+                    this.shapeManager.showRotationsForShape.SetActive(false);
+                    this.shapeManager.gameManager.rotationMode = false;
+                    this.rotationsShown = new Dictionary<BaseShape, bool>();
+                }
+            }
         }
+        if (rotateMe)
+        {
+            foreach (var item in rotationsShown)
+            {
+                if (item.amITheChosenPermutation)
+                {
+                    permutation = item.permutation;
+                    this.getRotationByPermutation(permutation);
+
+                }
+                Destroy(item);
+            }
+            rotateMe = false;
+        }*/
     }
 
+    /*private bool rotateMe = false;
+
+    private bool amITheChosenPermutation = false;
+    private Dictionary<BaseShape, bool> rotationsShown = new Dictionary<BaseShape, bool>();
+    public void showPossibleRotations()
+    {
+        rotateMe = true;
+        this.shapeManager.showRotationsForShape.SetActive(true);
+
+        for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+        {
+            var rot = getRotationByPermutation(i);
+            //Quaternion qut = Quaternion.Euler();
+            var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
+            var pos = childMatch.transform.localPosition;
+            childMatch.gameObject.SetActive(false);
+            BaseShape rotated = Instantiate(this, this.shapeManager.showRotationsForShape.transform, false);
+
+            rotated.name = "permutation_" + i.ToString();
+            rotated.transform.localPosition = pos;
+            rotated.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
+            rotated.permutation = i;
+            rotationsShown.Add(rotated, false);
+        }
+    }
+*/
 
     public void Place()
     {
@@ -186,7 +202,7 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
         this.transform.localPosition = this.nearestCell.upperRightEdge();
     }
 
-    private bool checkPositionInBoard()
+    protected bool checkPositionInBoard()
     {
         this.transform.SetParent(this.shapeManager.boardtrans);
         bool res = this.shapeManager.isPositionedInBoard(transform.localPosition);
@@ -196,25 +212,28 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
 
     public void moveForAi(int permutation, int new_position_x, int new_position_y)
     {
-        this.transform.SetParent(this.shapeManager.canvasTrans);
+        this.transform.SetParent(this.shapeManager.boardtrans);
         transform.localPosition = new Vector3(new_position_x, new_position_y);
+        print("moving ai shape to: " + new_position_x.ToString() + " " + new_position_y.ToString());
         this.nearestCell = this.getNearesetCell();
         this.rotateByPermutation(permutation);
         Place();
-        this.shapeManager.switchTurn();
+        if (!this.shapeManager.isFirstTurn)
+        {
+            this.shapeManager.switchTurn();
+        }
     }
 
 
-    private CellClass getNearesetCell()
+    protected CellClass getNearesetCell()
     {
         this.transform.SetParent(this.shapeManager.boardtrans);
-        print("for position: " + this.transform.localPosition.ToString() + " got cell: ");
         var cell = this.shapeManager.getNearestCell(transform.localPosition);
         this.transform.SetParent(this.shapeManager.canvasTrans);
         return cell;
     }
 
-    private void getInitialCell()
+    protected void getInitialCell()
     {
         if (this.shapeManager.isFirstTurn)
         {
@@ -233,28 +252,51 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
 
     public bool shapeOfHuman() => this.shapeManager.isHeHuman();//one can assume that this is always called after can be moved.
 
-    /*public void OnMouseDown()
+    public void OnMouseDown()
     {
-        print("touched: " + this.name);
         //This function is called once the player has started to drag the object.
         if (!isFinalPos && canBeMoved() && shapeOfHuman())
         {
-            if (!this.shapeManager.isFirstTurn)
+            if (this.shapeManager.gameManager.rotationMode)
             {
-                //The localposition is the objects position inside the canvas.
-                this.startingPosition = this.transform.localPosition;
-
-                mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
-
-                //Store offset = gameobject world pos - mouse world pos
-                mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+                print("rotate");
+                if (this.shapeManager.gameManager.choosingRotationMode)
+                {
+                    /*print("chose rot!");
+                    this.amITheChosenPermutation = true;
+                    this.shapeManager.gameManager.choosingRotationMode = false;
+                    this.shapeManager.showRotationsForShape.SetActive(false);
+                    this.shapeManager.gameManager.rotationMode = false;
+                    for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+                    {
+                        var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
+                        childMatch.gameObject.SetActive(true);
+                    }*/
+                }
+                else
+                {
+                    print("show rot");
+                    this.showPossibleRotations();
+                    this.shapeManager.gameManager.choosingRotationMode = true;
+                }
             }
             else
             {
-                //In the first turn in the game, the player (4) chooses which shape to position in the middle of the board
-                this.getInitialCell();
-                this.Place();
-                this.shapeManager.sendStartGame(piece_num, permutation);
+                if (!this.shapeManager.isFirstTurn)
+                {
+                    //The localposition is the objects position inside the canvas.
+                    mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+
+                    //Store offset = gameobject world pos - mouse world pos
+                    mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+                }
+                else
+                {
+                    //In the first turn in the game, the player (4) chooses which shape to position in the middle of the board
+                    this.getInitialCell();
+                    this.Place();
+                    this.shapeManager.sendStartGame(piece_num, permutation);
+                }
             }
         }
     }
@@ -263,13 +305,14 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
     public void OnMouseUp()
     {
         //This function is called once the player has finished dragging the object, and put it down.
-        if (canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
+        if ((!this.shapeManager.gameManager.rotationMode) && canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
             if (Move() == -1)
             {
                 //In case of an illegal move - reset the move.
                 this.shapeManager.shoutAtPlayer();
                 transform.localPosition = startingPosition;
+                this.transform.SetParent(this.startTransformation);
                 return;
             }
             else
@@ -279,7 +322,7 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
                 shapeManager.switchTurn();
             }
         }
-    }*/
+    }
 
     private Vector3 GetMouseAsWorldPoint()
     {
@@ -296,12 +339,11 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
 
     public void OnMouseDrag()
     {
-        print("hey from " + name);
         //This function is called while the player drags the piece.
-        if (canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
+        if ((!this.shapeManager.gameManager.rotationMode) && canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
-            print("draggind: " + this.name);
             transform.position = GetMouseAsWorldPoint() + mOffset;
+
             if (this.checkPositionInBoard())
             {
                 this.nearestCell = this.getNearesetCell();
@@ -310,23 +352,6 @@ public abstract class BaseShape : MonoBehaviour, IPointerClickHandler,
             }
         }
     }
-
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        print("click!");
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        print("enter");
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        print("bye:(");
-    }
-
-
     #endregion
 
 }

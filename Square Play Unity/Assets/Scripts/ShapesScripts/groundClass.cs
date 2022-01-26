@@ -12,4 +12,6 @@ public class groundClass : BaseShape
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
     }
+
+
 }

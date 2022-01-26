@@ -12,4 +12,6 @@ public class GimelClass : BaseShape
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
     }
+
 }
+

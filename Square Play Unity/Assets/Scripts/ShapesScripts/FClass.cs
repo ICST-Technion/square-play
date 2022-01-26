@@ -12,4 +12,5 @@ public class FClass : BaseShape
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
     }
+
 }

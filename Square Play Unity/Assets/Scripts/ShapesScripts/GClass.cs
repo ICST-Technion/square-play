@@ -12,4 +12,5 @@ public class GClass : BaseShape
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
     }
+
 }

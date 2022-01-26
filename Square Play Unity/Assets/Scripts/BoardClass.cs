@@ -37,9 +37,12 @@ public class BoardClass : MonoBehaviour
             }
         }
     }
-    public void generate(int cols, int rows)
+
+    private CompetitiveGameManager manager;
+    public void generate(int cols, int rows, CompetitiveGameManager m)
     {
 
+        manager = m;
         cells = new List<CellClass>();
 
         my_comparer = new CoordinatesComparer();
@@ -69,7 +72,7 @@ public class BoardClass : MonoBehaviour
     {
         CellClass newCell = Instantiate(cellPrefab) as CellClass;
         //newCell.GetComponent<MeshRenderer>().material = cell_material;
-        newCell.setupPos(posx, posy);
+        newCell.setupPos(posx, posy, manager);
 
         newCell.transform.SetParent(transform, false);
         newCell.transform.localPosition = new Vector3(posx, posy, 0);
@@ -91,7 +94,9 @@ public class BoardClass : MonoBehaviour
     {
         //This function will map coordinates on the unity grid to the cell in which those coordinates can be found.
         Vector3 toLowerLeft = new Vector3(Mathf.Floor(x), Mathf.Floor(y));
-        return this.coordinatesToCellIndex.GetValueOrDefault(toLowerLeft, -1);
+        int ret = -1;
+        this.coordinatesToCellIndex.TryGetValue(toLowerLeft, out ret);
+        return ret;
     }
 
     public CellClass getCellByCoordinates(Vector3 position)

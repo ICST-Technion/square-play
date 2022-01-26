@@ -33,7 +33,7 @@ public class gameCanvasScript : MonoBehaviour
 
     public void choseToRotate()
     {
-
+        manager.rotationMode = true;
     }
 
 }

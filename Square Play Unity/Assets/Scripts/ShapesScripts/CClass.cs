@@ -18,4 +18,5 @@ public class CClass : BaseShape
         this.shapeManager = newPieceManager;
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
     }
+    
 }

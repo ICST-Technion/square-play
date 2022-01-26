@@ -24,6 +24,10 @@ public class CompetitiveGameManager : MonoBehaviour
     private int cols = 33;
     private int rows = 33;
 
+    public bool rotationMode = false; //Turns true when "Rotation" Button is clicked
+
+    public bool choosingRotationMode = false;//Turns true when rotation choice is made
+
     public PlayerClass[] players;
 
     // Use this for initialization
@@ -33,19 +37,15 @@ public class CompetitiveGameManager : MonoBehaviour
         proc.StartInfo.FileName = "C:/Users/jonat/Documents/Technion/Final_Project/square-play/Python_Simulator/dist/main";
         proc.Start();*/
 
-        /*Test: 
-        this.players[3].playerShapes[2].shapeManager = shapesManager;
-        this.players[3].playerShapes[2].showPossibleRotations();*/
-
         /*Disable for tests only!!!! 
         also, dont foregt to delete whats for test in shapes manager and to set visible the pre game canvas*/
-        this.setupSocket();
+        // disabled for test only ! ! ! this.setupSocket();
         this.randomizePlayerNames();//for test only
-        board.generate(cols, rows); //give that board instance access to the python comm functions, via the socket interface
+        board.generate(cols, rows, this); //give that board instance access to the python comm functions, via the socket interface
 
         shapesManager.Setup(this.board, this);
-        this.msgNamesToServer();//for test only
-        this.startGame();//for test only
+        //this.msgNamesToServer();//for test only
+        //this.startGame();//for test only
     }
 
     public void randomizePlayerNames()
