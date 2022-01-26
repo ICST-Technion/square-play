@@ -1,0 +1,54 @@
+{
+    "board": [],
+    "moves": [
+        {
+            "piece_num": 13,
+            "permutation": 4
+        },
+        {
+            "type": 0,
+            "player_num": 1
+        },
+        {
+            "type": 0,
+            "player_num": 2
+        },
+        {
+            "type": 0,
+            "player_num": 3
+        },
+        {
+            "type": 0,
+            "player_num": 4
+        },
+        {
+            "type": 0,
+            "player_num": 3
+        },
+        {
+            "type": 0,
+            "player_num": 2
+        },
+        {
+            "type": 1,
+            "player_num": 1,
+            "piece_num": 9,
+            "permutation": 1,
+            "x": 16,
+            "y": 16
+        },
+        {
+            "type": 0,
+            "player_num": 1
+        },
+        {
+            "type": 0,
+            "player_num": 3
+        },
+        {
+            "type": 0,
+            "player_num": 2
+        }
+    ],
+    "expect": [2, 0, 0, 0, 0, -1, -1, 1, 0, -1, 0]
+}
