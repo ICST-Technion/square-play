@@ -92,8 +92,8 @@ def remoteMain():
                 bytes_to_send = struct.pack('5i', *to_send)
             else:
                 bytes_to_send = struct.pack('2i', *to_send)
-            print("bytes to send:")
-            print(bytes_to_send)
+            print("data to send:")
+            print(to_send)
             c.sendall(bytes_to_send)
             #c.close()
 

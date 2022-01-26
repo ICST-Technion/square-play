@@ -26,7 +26,9 @@ public class CompetitiveGameManager : MonoBehaviour
 
     public bool rotationMode = false; //Turns true when "Rotation" Button is clicked
 
-    public bool choosingRotationMode = false;//Turns true when rotation choice is made
+    public bool choosingRotationMode = false; //Turns true when rotation choice is made
+
+    public int chosenRotation = -1;
 
     public PlayerClass[] players;
 
@@ -39,13 +41,11 @@ public class CompetitiveGameManager : MonoBehaviour
 
         /*Disable for tests only!!!! 
         also, dont foregt to delete whats for test in shapes manager and to set visible the pre game canvas*/
-        // disabled for test only ! ! ! this.setupSocket();
-        this.randomizePlayerNames();//for test only
+        this.setupSocket();
+
         board.generate(cols, rows, this); //give that board instance access to the python comm functions, via the socket interface
 
         shapesManager.Setup(this.board, this);
-        //this.msgNamesToServer();//for test only
-        //this.startGame();//for test only
     }
 
     public void randomizePlayerNames()
@@ -177,7 +177,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     {
         try
         {
-            this.dataOut = new int[5] { playerNum, pieceNum, permutation, new_position_x, new_position_y };
+            this.dataOut = new int[5] { playerNum, pieceNum, permutation + 1, new_position_x, new_position_y };
             this.dataIn = sendMoveMsg();
             this.printDataIn();
             return this.dataIn;

@@ -13535,7 +13535,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!225 &1559739294
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -16657,6 +16657,7 @@ GameObject:
   - component: {fileID: 1946365453}
   - component: {fileID: 1946365452}
   - component: {fileID: 1946365454}
+  - component: {fileID: 1946365455}
   m_Layer: 0
   m_Name: Shape Rotation Shower
   m_TagString: Untagged
@@ -16753,6 +16754,18 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1946365455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1946365450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bdc3de62be83924db644c1f010105e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &1949702216 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 151299471, guid: 43bb7524ce2ab054ba50c321a78e6427, type: 3}

@@ -35,5 +35,8 @@ public class gameCanvasScript : MonoBehaviour
     {
         manager.rotationMode = true;
     }
-
+    public void chooseRotation(int a)
+    {
+        this.BroadcastMessage("setMyRotation", a);
+    }
 }

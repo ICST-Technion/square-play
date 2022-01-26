@@ -28,8 +28,6 @@ public abstract class BaseShape : MonoBehaviour
 
     public int playerNum;
 
-    //public GameObject classPrefab;
-
 
     //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
@@ -39,14 +37,8 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.SetParent(this.shapeManager.canvasTrans);
         this.transform.localScale = new Vector3(this.shapeManager.gameScale, this.shapeManager.gameScale, 0);
         this.transform.localRotation = Quaternion.identity;
-        /*foreach (GameObject line in this.assemblingLines)
-        {
-            line.GetComponent<LineRenderer>().startColor = newTeamColor;
-            line.GetComponent<LineRenderer>().endColor = Color.white;
-        }*/
         int.TryParse(this.name.Split('_')[1], out this.playerNum);
         this.playerNum -= 1;
-        //this.gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
     }
 
     private Transform startTransformation;
@@ -85,7 +77,7 @@ public abstract class BaseShape : MonoBehaviour
     {
         this.permutation = permutation;
         int[] rot = this.getRotationByPermutation(permutation);
-        this.transform.localRotation.Set(rot[0], rot[1], rot[2], rot[3]);
+        this.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
     }
 
     private int[] getRotationByPermutation(int permutation)
@@ -95,20 +87,20 @@ public abstract class BaseShape : MonoBehaviour
         {
             case 1:
                 return new int[] { 0, 0, 270, 0 };
-            case 2:
-                return new int[] { 0, 0, -270, 0 };
             case 3:
+                return new int[] { 0, 0, -270, 0 };
+            case 2:
                 return new int[] { 0, 0, 180, 0 };
             case 4:
                 return new int[] { 0, 180, 0, 0 };
             case 5:
                 return new int[] { 0, 180, 270, 0 };
-            case 6:
-                return new int[] { 0, 180, -270, 0 };
-            case 7:
-                return new int[] { 180, 0, 0, 0 };
             case 8:
-                return new int[] { 180, 0, 90, 0 };
+                return new int[] { 0, 180, -270, 0 };
+            case 6:
+                return new int[] { 180, 0, 0, 0 };
+            case 7:
+                return new int[] { 180, 0, 270, 0 };
             case 9:
                 return new int[] { 180, 0, -90, 0 };
             default:
@@ -118,57 +110,19 @@ public abstract class BaseShape : MonoBehaviour
 
     void Update()
     {
-        /*Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            Collider2D targetObject = Physics2D.OverlapPoint(mousePosition);
-
-            if (targetObject && rotateMe)
-            {
-                print(targetObject);
-
-                int perm = 0;
-                int.TryParse(targetObject.name.Split('_')[1], out perm);
-                if (perm > 0)
-                {
-                    foreach (var item in rotationsShown)
-                    {
-                        if (item.Key.name == targetObject.name)
-                        {
-                            this.getRotationByPermutation(perm);
-                        }
-                        Destroy(item.Key);
-                    }
-                    rotateMe = false;
-                    print("chose rot!");
-                    this.shapeManager.gameManager.choosingRotationMode = false;
-                    this.shapeManager.showRotationsForShape.SetActive(false);
-                    this.shapeManager.gameManager.rotationMode = false;
-                    this.rotationsShown = new Dictionary<BaseShape, bool>();
-                }
-            }
-        }
-        if (rotateMe)
-        {
-            foreach (var item in rotationsShown)
-            {
-                if (item.amITheChosenPermutation)
-                {
-                    permutation = item.permutation;
-                    this.getRotationByPermutation(permutation);
-
-                }
-                Destroy(item);
-            }
-            rotateMe = false;
-        }*/
+        /* if (rotateMe && this.shapeManager.gameManager.chosenRotation != -1)
+         {
+             print("rotating the shape: " + this.name + " in perm: " + this.shapeManager.gameManager.chosenRotation);
+             this.rotateByPermutation(this.shapeManager.gameManager.chosenRotation);
+             this.shapeManager.gameManager.chosenRotation = -1;
+             rotateMe = false;
+         } */
     }
 
     private bool rotateMe = false;
 
     private bool amITheChosenPermutation = false;
-    private Dictionary<BaseShape, bool> rotationsShown = new Dictionary<BaseShape, bool>();
+    private List<BaseShape> rotationsShown = new List<BaseShape>();
     public void showPossibleRotations()
     {
         rotateMe = true;
@@ -187,7 +141,7 @@ public abstract class BaseShape : MonoBehaviour
             rotated.transform.localPosition = pos;
             rotated.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
             rotated.permutation = i;
-            rotationsShown.Add(rotated, false);
+            rotationsShown.Add(rotated);
         }
     }
 
@@ -251,6 +205,17 @@ public abstract class BaseShape : MonoBehaviour
 
     public bool shapeOfHuman() => this.shapeManager.isHeHuman();//one can assume that this is always called after can be moved.
 
+    public void setMyRotation(int rot)
+    {
+        if (rotateMe && this.shapeManager.gameManager.chosenRotation != -1)
+        {
+            print("rotating the shape: " + this.name + " in perm: " + rot);
+            this.rotateByPermutation(rot);
+            this.shapeManager.gameManager.chosenRotation = -1;
+            rotateMe = false;
+        }
+    }
+
     public void OnMouseDown()
     {
         //This function is called once the player has started to drag the object.
@@ -261,16 +226,21 @@ public abstract class BaseShape : MonoBehaviour
                 print("rotate");
                 if (this.shapeManager.gameManager.choosingRotationMode)
                 {
-                    /*print("chose rot!");
+                    print("chose rot!");
                     this.amITheChosenPermutation = true;
                     this.shapeManager.gameManager.choosingRotationMode = false;
                     this.shapeManager.showRotationsForShape.SetActive(false);
                     this.shapeManager.gameManager.rotationMode = false;
+                    this.shapeManager.gameManager.chosenRotation = permutation;
+                    this.shapeManager.gameManager.gameCanvas.chooseRotation(permutation);
+                    print("chosen perm : " + this.permutation.ToString());
                     for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
                     {
-                        var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
-                        childMatch.gameObject.SetActive(true);
-                    }*/
+                        //var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
+                        //childMatch.gameObject.SetActive(true);
+                        Destroy(this.shapeManager.showRotationsForShape.transform.GetChild(i).gameObject);
+
+                    }
                 }
                 else
                 {

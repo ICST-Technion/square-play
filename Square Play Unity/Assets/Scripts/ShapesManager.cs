@@ -18,7 +18,7 @@ public class ShapesManager : MonoBehaviour
     public float spacingFactor;
 
     //[HideInInspector]
-    private int numOfMovesForCurrentPlayer = 0;
+    public int numOfMovesForCurrentPlayer = 0;
 
     public int gameScale = 33;
 
@@ -46,7 +46,7 @@ public class ShapesManager : MonoBehaviour
      Later on, when ill have time, make the whole prefabs thing smarter:
      Instead of doing initShapesPrefabs one by one, do a loop that will go foreach item in shape order,
      and in the loop, given the name of the current shape in the loop, go to its value in shapeLibrary, and get its type.
-     The problem is that it wont allow to use it in the conversion -where i do (HClass)Ass.... 
+     The problem is that it wont allow to use it in the conversion - where i do (HClass)Ass.... 
      I need to find a way to properly convert it..
      maybe... do a dict from shapes names to the lines assembling it. take the lines from the assetload and put them on a new BaseShape object.
     */
@@ -55,6 +55,7 @@ public class ShapesManager : MonoBehaviour
 
     public void Setup(BoardClass board, CompetitiveGameManager gM)
     {
+
         this.gameManager = gM;
         this.boardtrans = this.gameManager.board.transform;
         this.canvasTrans = this.gameManager.gameCanvas.transform;
@@ -69,9 +70,6 @@ public class ShapesManager : MonoBehaviour
 
         setupShapes(Color.green, gameManager.players[3]);
 
-        /*Rotations test:
-        this.numOfPossiblePermutations = 2;
-        gameManager.players[3].playerShapes[3].showPossibleRotations();*/
     }
 
     private void setupShapes(Color teamColor, PlayerClass bank, bool isUp = false, bool isDown = false)
@@ -90,7 +88,7 @@ public class ShapesManager : MonoBehaviour
         {
             print("hey");
             absoluteX += 70;
-            absoluteY += 75;
+            absoluteY += 40;
         }
         else
         {
@@ -103,7 +101,6 @@ public class ShapesManager : MonoBehaviour
         bank.playerShapes.ForEach(delegate (BaseShape shape)
         {
             //Later: transfer the starting position to setup too.
-            //shape.GetComponent<BoxCollider2D>().isTrigger = false;
             shape.Setup(teamColor, this);
             float new_x = absoluteX + x_add * spacingFactor;
             float new_y = absoluteY - y_add * spacingFactor;
@@ -138,8 +135,9 @@ public class ShapesManager : MonoBehaviour
     {
         if (numberClosed > 1)
         {
-            this.numOfMovesForCurrentPlayer += numberClosed - 1;
+            this.numOfMovesForCurrentPlayer += numberClosed;
         }
+        print(this.numOfMovesForCurrentPlayer);
     }
 
     private void setInteractive(List<BaseShape> allShapes, bool value)
@@ -164,8 +162,8 @@ public class ShapesManager : MonoBehaviour
         int newX = aiMove[2];
         int newY = aiMove[3];
         int shapeNum = aiMove[0];
-        int permutation = aiMove[1];
-        this.currentPlayerClosedSquares(aiMove[4] - 1);
+        int permutation = aiMove[1] - 1;
+        this.currentPlayerClosedSquares(aiMove[4]);
         allShapes.ForEach(delegate (BaseShape shape)
         {
             if (shape.piece_num == shapeNum)

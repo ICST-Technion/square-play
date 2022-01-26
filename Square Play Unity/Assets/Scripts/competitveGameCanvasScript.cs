@@ -24,12 +24,12 @@ public class competitveGameCanvasScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        /*Disabled for tests only
+        /*Disabled for tests only*/
         gameCanvas.SetActive(false);
-        preCanvas.SetActive(true);*/
+        preCanvas.SetActive(true);
         /*Test*/
-        gameCanvas.SetActive(true);
-        preCanvas.SetActive(false);
+        //gameCanvas.SetActive(true);
+        //preCanvas.SetActive(false);
     }
 
     // Update is called once per frame
