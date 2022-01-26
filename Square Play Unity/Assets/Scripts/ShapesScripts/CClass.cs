@@ -5,14 +5,18 @@ using UnityEngine.UI;
 
 public class CClass : BaseShape
 {
-    public List<GameObject> lines;
 
-    public override void Setup(Color newTeamColor, Color32 newSpriteColor, int teamN,ShapesManager newPieceManager, Vector3 startingPos)
+    public override void Setup(Color newTeamColor, ShapesManager newPieceManager)
     {
-        base.Setup(newTeamColor, newSpriteColor, teamN,newPieceManager,startingPos);
+        base.Setup(newTeamColor, newPieceManager);
 
-        base.assemblingLines=lines;
+        base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
-        //GetComponent<Image>().sprite = Resources.Load<Sprite>("T_Bishop");
     }
+    public void tempSet(ShapesManager newPieceManager)
+    {
+        this.shapeManager = newPieceManager;
+        base.piece_num = newPieceManager.getPieceNumByType(this.name);
+    }
+    
 }

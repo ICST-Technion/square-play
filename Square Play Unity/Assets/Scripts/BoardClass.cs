@@ -9,12 +9,12 @@ public class BoardClass : MonoBehaviour
 
     public List<CellClass> cells;
 
-    //For each cell, well save its lower left edge's coordinates together with the cells index in list.
+    //For each cell, well save its upper right edge coordinates together with the cells index in list.
     private SortedDictionary<Vector3, int> coordinatesToCellIndex;
 
     private CoordinatesComparer my_comparer;
 
-	private int scaleFactor = 33;
+    private int scaleFactor = 33;
 
     //public Material cell_material;//tbd
 
@@ -37,9 +37,12 @@ public class BoardClass : MonoBehaviour
             }
         }
     }
-    public void generate(int cols, int rows)
+
+    private CompetitiveGameManager manager;
+    public void generate(int cols, int rows, CompetitiveGameManager m)
     {
 
+        manager = m;
         cells = new List<CellClass>();
 
         my_comparer = new CoordinatesComparer();
@@ -53,31 +56,24 @@ public class BoardClass : MonoBehaviour
             {
                 var newCell = createCell(x, y);
                 cells.Add(newCell);
-                //Vector3 lowerLeft = new Vector3(newCell.lower_left_x, newCell.lower_left_y);
-				Vector3 lowerLeft = new Vector3(newCell.x, newCell.y);
-                coordinatesToCellIndex.Add(lowerLeft, cells.Count - 1);
-                if(cells.Count<3){
-                    print(newCell.transform.position);
-                }
+                coordinatesToCellIndex.Add(new Vector3(newCell.x, newCell.y), cells.Count - 1);
             }
 
         }
 
 
-		float newX = -rows / 2 + 1 / 2;
+        float newX = -rows / 2 + 1 / 2;
         float newY = -cols / 2 + 1 / 2;
-		transform.localPosition= new Vector3(newX*scaleFactor, newY*scaleFactor, 0);
-		transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+        transform.localPosition = new Vector3(newX * scaleFactor, newY * scaleFactor, 0);
+        transform.localScale = new Vector3(scaleFactor, scaleFactor, 1);
     }
 
     CellClass createCell(int posx, int posy)
     {
         CellClass newCell = Instantiate(cellPrefab) as CellClass;
         //newCell.GetComponent<MeshRenderer>().material = cell_material;
-        //I think that posx and posy are the coordinates of the cells center. check it!
-        newCell.x = posx;
-        newCell.y = posy;
-        //TBD: add the coordinates of lower left and upper right edges.
+        newCell.setupPos(posx, posy, manager);
+
         newCell.transform.SetParent(transform, false);
         newCell.transform.localPosition = new Vector3(posx, posy, 0);
 
@@ -86,26 +82,30 @@ public class BoardClass : MonoBehaviour
         return newCell;
     }
 
-	public bool isInBoard(Vector3 position){
-		//Checks wheter a given point is inside the board.
-		float x = position.x;
-		float y = position.y;
-		return coordinatesToCell(x,y) != -1;
-	}
+    public bool isInBoard(Vector3 position)
+    {
+        //Checks wheter a given point is inside the board.
+        float x = position.x;
+        float y = position.y;
+        return coordinatesToCell(x, y) != -1;
+    }
 
     private int coordinatesToCell(float x, float y)
     {
         //This function will map coordinates on the unity grid to the cell in which those coordinates can be found.
         Vector3 toLowerLeft = new Vector3(Mathf.Floor(x), Mathf.Floor(y));
-        return this.coordinatesToCellIndex.GetValueOrDefault(toLowerLeft, -1);
+        int ret = -1;
+        this.coordinatesToCellIndex.TryGetValue(toLowerLeft, out ret);
+        return ret;
     }
 
-	public CellClass getCellByCoordinates(Vector3 position){
-		//Assume isInBoard is called before that function.
-		float x = position.x;
-		float y = position.y;
-		int idx = coordinatesToCell(x,y);
-		return this.cells[idx];
-	}
+    public CellClass getCellByCoordinates(Vector3 position)
+    {
+        //Assume isInBoard is called before that function.
+        float x = position.x;
+        float y = position.y;
+        int idx = coordinatesToCell(x, y);
+        return this.cells[idx];
+    }
 }
 

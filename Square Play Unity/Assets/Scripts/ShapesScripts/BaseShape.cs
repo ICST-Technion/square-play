@@ -2,96 +2,294 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-
+//using UnityEngine.;
 
 public abstract class BaseShape : MonoBehaviour
 {
-    [HideInInspector]
-    public Color color = Color.clear;
-    [HideInInspector]
-    public int playerNum = -1;
-    private Vector3 mOffset;
-    private float mZCoord;
+    protected Vector3 mOffset;
+    protected float mZCoord;
 
-    protected Vector3 startingPosition;
-    protected RectTransform rectTransform = null;
+    public Vector3 startingPosition;
 
     public ShapesManager shapeManager;
 
     //This is very important! It is used in order to correctly position the shape on the new cells.
-    public List<GameObject> assemblingLines;
+    public List<GameObject> assemblingLines = new List<GameObject>();
 
-    protected CellClass nearestCell=null; //tbd: need to not only highlight the nearest cell, but also the nearest cell to each line
+    protected CellClass nearestCell = null; //tbd: need to not only highlight the nearest cell, but also the nearest cell to each line
 
-    protected int piece_num;
+    public int piece_num;
+
+    protected int permutation = 0;
+
+    public bool isFinalPos = false;
+
+    public bool chooseCellForMe = false;
+
+    public int playerNum;
+
 
     //protected List<List<CellClass>> hintCells = new List<List<CellClass>>();//This is for the helper.
 
-    public virtual void Setup(Color newTeamColor, Color32 newSpriteColor, int playerNum, ShapesManager newshapeManager, Vector3 startingPos)
+    public virtual void Setup(Color newTeamColor, ShapesManager newshapeManager)
     {
-        shapeManager = newshapeManager;
-        this.playerNum = playerNum;
-        color = newTeamColor;
-        GetComponent<Image>().color = newSpriteColor;
-        rectTransform = GetComponent<RectTransform>();
-        startingPosition = startingPos;
+        this.shapeManager = newshapeManager;
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        this.transform.localScale = new Vector3(this.shapeManager.gameScale, this.shapeManager.gameScale, 0);
+        this.transform.localRotation = Quaternion.identity;
+        int.TryParse(this.name.Split('_')[1], out this.playerNum);
+        this.playerNum -= 1;
+    }
+
+    private Transform startTransformation;
+    public void setupStartPos(float x, float y, Transform startTrans)
+    {
+        var pos = new Vector3(x, y);
+        this.transform.localPosition = pos;
+        this.startTransformation = startTrans;
+        this.startingPosition = pos;
     }
 
     #region Movement
 
-    public bool Move()
+    public int Move()
     {
-        //tbd: if its a computer player - move according to the AI algo... 
-        //needto: check if those are the actual coordinates.
+        if (!this.checkPositionInBoard())
+        {
+            return -1;
+        }
         this.nearestCell = this.getNearesetCell();
-        float new_position_x = this.nearestCell.x;
-        float new_position_y = this.nearestCell.y;
-        int permutation = 1; //tbd: add permutations later.
+        int new_position_x = this.nearestCell.x;
+        int new_position_y = this.nearestCell.y;
 
         //Check that move is valid with logic function
-        return this.shapeManager.sendMove(playerNum, piece_num, permutation, new_position_x, new_position_y);
+        print("sending move for shape : " + this.name);
+        int[] response = this.shapeManager.sendMove(piece_num, permutation, new_position_x, new_position_y);
+        if (response[0] != -1)
+        {
+            var numOfClosed = response[1];
+            this.shapeManager.currentPlayerClosedSquares(numOfClosed);
+        }
+        return response[0];
     }
 
-
-    public void Place() //tbd: make it virtual so each shape will override it and place all its lines according to its shape!
+    private void rotateByPermutation(int permutation)
     {
-        this.nearestCell.isOccupied=true;
-        this.transform.SetParent(this.nearestCell.transform.parent);
-        this.transform.position=this.nearestCell.transform.position;
-        //tbd: position it on all of the new cells according to the actual shape (? - maybe this is automatically done via the drag function?)
-        gameObject.isStatic=true;
-        
+        this.permutation = permutation;
+        int[] rot = this.getRotationByPermutation(permutation);
+        this.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
     }
 
+    private int[] getRotationByPermutation(int permutation)
+    {
+        //By default, there is a maximum of 8 permutations.
+        switch (permutation)
+        {
+            case 1:
+                return new int[] { 0, 0, 270, 0 };
+            case 3:
+                return new int[] { 0, 0, -270, 0 };
+            case 2:
+                return new int[] { 0, 0, 180, 0 };
+            case 4:
+                return new int[] { 0, 180, 0, 0 };
+            case 5:
+                return new int[] { 0, 180, 270, 0 };
+            case 8:
+                return new int[] { 0, 180, -270, 0 };
+            case 6:
+                return new int[] { 180, 0, 0, 0 };
+            case 7:
+                return new int[] { 180, 0, 270, 0 };
+            case 9:
+                return new int[] { 180, 0, -90, 0 };
+            default:
+                return new int[] { 0, 0, 0, 0 }; ;
+        }
+    }
+
+    void Update()
+    {
+        /* if (rotateMe && this.shapeManager.gameManager.chosenRotation != -1)
+         {
+             print("rotating the shape: " + this.name + " in perm: " + this.shapeManager.gameManager.chosenRotation);
+             this.rotateByPermutation(this.shapeManager.gameManager.chosenRotation);
+             this.shapeManager.gameManager.chosenRotation = -1;
+             rotateMe = false;
+         } */
+    }
+
+    private bool rotateMe = false;
+
+    private bool amITheChosenPermutation = false;
+    private List<BaseShape> rotationsShown = new List<BaseShape>();
+    public void showPossibleRotations()
+    {
+        rotateMe = true;
+        this.shapeManager.showRotationsForShape.SetActive(true);
+
+        for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+        {
+            var rot = getRotationByPermutation(i);
+            //Quaternion qut = Quaternion.Euler();
+            var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
+            var pos = childMatch.transform.localPosition;
+            childMatch.gameObject.SetActive(false);
+            BaseShape rotated = Instantiate(this, this.shapeManager.showRotationsForShape.transform, false);
+
+            rotated.name = "permutation_" + i.ToString();
+            rotated.transform.localPosition = pos;
+            rotated.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
+            rotated.permutation = i;
+            rotationsShown.Add(rotated);
+        }
+    }
+
+    public void Place()
+    {
+        //Placing the piece in its final positon on board, and making it unplayable.
+        this.isFinalPos = true;
+        this.nearestCell.isOccupied = true;
+        this.transform.SetParent(this.nearestCell.transform.parent);
+        this.transform.position = this.nearestCell.transform.position;
+        this.transform.localPosition = this.nearestCell.upperRightEdge();
+    }
+
+    protected bool checkPositionInBoard()
+    {
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        bool res = this.shapeManager.isPositionedInBoard(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return res;
+    }
+
+    public void moveForAi(int permutation, int new_position_x, int new_position_y)
+    {
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        transform.localPosition = new Vector3(new_position_x, new_position_y);
+        print("moving ai shape to: " + new_position_x.ToString() + " " + new_position_y.ToString());
+        this.nearestCell = this.getNearesetCell();
+        this.rotateByPermutation(permutation);
+        Place();
+        if (!this.shapeManager.isFirstTurn)
+        {
+            this.shapeManager.switchTurn();
+        }
+    }
+
+
+    protected CellClass getNearesetCell()
+    {
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        var cell = this.shapeManager.getNearestCell(transform.localPosition);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        return cell;
+    }
+
+    protected void getInitialCell()
+    {
+        if (this.shapeManager.isFirstTurn)
+        {
+            this.transform.SetParent(this.shapeManager.boardtrans);
+            var startingPos = new Vector3(15, 15);
+            this.nearestCell = this.shapeManager.getNearestCell(startingPos);
+            this.transform.SetParent(this.shapeManager.canvasTrans);
+        }
+    }
 
     #endregion
 
     #region Events
 
-    void OnMouseDown()
-    {
-        //The localposition is the objects position inside the canvas.
-        this.startingPosition=this.transform.localPosition;
-        //This function is called once the player has started to drag the object.
-        mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+    public bool canBeMoved() => playerNum == this.shapeManager.currentPlayer;
 
-        //Store offset = gameobject world pos - mouse world pos
-        mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+    public bool shapeOfHuman() => this.shapeManager.isHeHuman();//one can assume that this is always called after can be moved.
+
+    public void setMyRotation(int rot)
+    {
+        if (rotateMe && this.shapeManager.gameManager.chosenRotation != -1)
+        {
+            print("rotating the shape: " + this.name + " in perm: " + rot);
+            this.rotateByPermutation(rot);
+            this.shapeManager.gameManager.chosenRotation = -1;
+            rotateMe = false;
+        }
     }
 
-    void OnMouseUp()
+    public void OnMouseDown()
+    {
+        //This function is called once the player has started to drag the object.
+        if (!isFinalPos && canBeMoved() && shapeOfHuman())
+        {
+            if (this.shapeManager.gameManager.rotationMode)
+            {
+                print("rotate");
+                if (this.shapeManager.gameManager.choosingRotationMode)
+                {
+                    print("chose rot!");
+                    this.amITheChosenPermutation = true;
+                    this.shapeManager.gameManager.choosingRotationMode = false;
+                    this.shapeManager.showRotationsForShape.SetActive(false);
+                    this.shapeManager.gameManager.rotationMode = false;
+                    this.shapeManager.gameManager.chosenRotation = permutation;
+                    this.shapeManager.gameManager.gameCanvas.chooseRotation(permutation);
+                    print("chosen perm : " + this.permutation.ToString());
+                    for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+                    {
+                        //var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
+                        //childMatch.gameObject.SetActive(true);
+                        Destroy(this.shapeManager.showRotationsForShape.transform.GetChild(i).gameObject);
+
+                    }
+                }
+                else
+                {
+                    print("show rot");
+                    this.showPossibleRotations();
+                    this.shapeManager.gameManager.choosingRotationMode = true;
+                }
+            }
+            else
+            {
+                if (!this.shapeManager.isFirstTurn)
+                {
+                    //The localposition is the objects position inside the canvas.
+                    mZCoord = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+
+                    //Store offset = gameobject world pos - mouse world pos
+                    mOffset = gameObject.transform.position - GetMouseAsWorldPoint();
+                }
+                else
+                {
+                    //In the first turn in the game, the player (4) chooses which shape to position in the middle of the board
+                    this.getInitialCell();
+                    this.Place();
+                    this.shapeManager.sendStartGame(piece_num, permutation);
+                }
+            }
+        }
+    }
+
+
+    public void OnMouseUp()
     {
         //This function is called once the player has finished dragging the object, and put it down.
-        if (!this.checkPositionInBoard() || !Move()) //In case of an illegal move - reset the move.
+        if ((!this.shapeManager.gameManager.rotationMode) && canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
-            transform.localPosition = startingPosition;
-            return;
-        }
-        else //tbd:either play next player, or give the current one more moves.
-        {
-            Place();
+            if (Move() == -1)
+            {
+                //In case of an illegal move - reset the move.
+                this.shapeManager.shoutAtPlayer();
+                transform.localPosition = startingPosition;
+                this.transform.SetParent(this.startTransformation);
+                return;
+            }
+            else
+            {
+                Place();
 
-            //shapeManager.SwitchTurn(playerNum);
+                shapeManager.switchTurn();
+            }
         }
     }
 
@@ -107,35 +305,24 @@ public abstract class BaseShape : MonoBehaviour
         return Camera.main.ScreenToWorldPoint(mousePoint);
     }
 
-    void OnMouseDrag()
+
+    public void OnMouseDrag()
     {
         //This function is called while the player drags the piece.
-        transform.position = GetMouseAsWorldPoint() + mOffset;
-        if (this.checkPositionInBoard()) //maybe need to check if all the lines are within the board...
+        if ((!this.shapeManager.gameManager.rotationMode) && canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
-            this.nearestCell = this.getNearesetCell();
-            print(this.nearestCell.ToString());
-            //this.nearestCell.mOutlineImage.enabled = true;
+            transform.position = GetMouseAsWorldPoint() + mOffset;
+
+            if (this.checkPositionInBoard())
+            {
+                this.nearestCell = this.getNearesetCell();
+
+                //this.nearestCell.mOutlineImage.enabled = true;
+            }
         }
     }
-
-    private bool checkPositionInBoard(){
-        
-        this.transform.SetParent(this.shapeManager.boardtrans);
-        bool res =this.shapeManager.isPositionedInBoard(transform.localPosition);
-        this.transform.SetParent(this.shapeManager.canvasTrans);
-        return res;
-    }
-
-    private CellClass getNearesetCell(){
-        this.transform.SetParent(this.shapeManager.boardtrans);
-        var cell = this.shapeManager.getNearestCell(transform.localPosition);
-        this.transform.SetParent(this.shapeManager.canvasTrans);
-        return cell;
-    }
-
     #endregion
-   
+
 }
 
 
@@ -214,4 +401,5 @@ this is for hint cells
         hintCells.Clear();
     }
 */
+
 
