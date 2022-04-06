@@ -4,7 +4,7 @@ from player import Player
 import socket
 import numpy as np
 import struct
-
+from buildChallenge import BuildChallenge
 
 def remoteMain():
     s = socket.socket()
@@ -130,4 +130,29 @@ if __name__ == '__main__':
     test_Game.move(1, 9, 1, 16, 16)
     """
     # ----------------------- REMOTE GAME -----------------------
+    """
     remoteMain()
+    """
+    # ---------------------- INTERACTIVE BUILDING GAME ----------------------
+    bc = BuildChallenge()
+    while not bc.challenge_finished:
+        bc.print_state()
+        print("Pieces left are: ", bc.pieces_left)
+        move, pn, pr, x, y = input(
+            "Syntax is: <move: A/R> <piece num: 1-16> <permutation: 1-8> <X coordinate : 1-32> <Y "
+            "coordinate 1-32)>:\n").split()
+        move = str(move)
+        pn = int(pn)
+        pr = int(pr)
+        coordinates = (int(x), int(y))
+        if move == 'A':
+            bc.add_to_attempt(pn, pr, coordinates[0], coordinates[1])
+        elif move == 'R':
+            bc.remove_from_attempt(pn, pr, coordinates[0], coordinates[1])
+        else:
+            print("Invalid move, try again")
+            continue
+        bc.check_attempt()
+
+        if bc.challenge_finished:
+            bc.print_state()
