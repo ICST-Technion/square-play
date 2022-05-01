@@ -2,6 +2,8 @@ from pieces import Piece
 import logging
 from tkinter import *
 
+log = False
+
 """
 The Board is just a list of a lines (one unit long), where a line is a set of two coordinates.
 
@@ -104,18 +106,20 @@ class Board:
         return extended_lines
 
     def piece_permutation(self, p: Piece, index=1):
-        if not 1 <= index <= 8:
+        global log
+        if not 1 <= index <= 8 and log:
             logging.error("Illegal permutation")
         p.permutate((index - 1) % 4, (index - 1) // 4 == 1)
         return p
 
     def check_piece_placement(self, p: Piece, first_move: bool, check: bool):
-
+        global log
         # first we check that all coordinates in the piece are inside the board
         for line in p.shape:
             for (x, y) in line:
                 if not (0 <= x <= 32 and 0 <= y <= 32):
-                    logging.error("Illegal coordinates")
+                    if log:
+                        logging.error("Illegal coordinates")
                     return False
 
         # now we check that such a line doesn't already exist on the board
@@ -126,7 +130,8 @@ class Board:
             for board_line in [bl[0] for bl in self.line_list]:
                 board_line_coor = list(board_line)
                 if board_line == line:
-                    logging.error("line already taken")
+                    if log:
+                        logging.error("line already taken")
                     return False
                 if board_line_coor[0] == new_coor_list[0] or board_line_coor[1] == new_coor_list[0] or \
                         board_line_coor[0] == new_coor_list[1] or board_line_coor[1] == new_coor_list[1]:
@@ -136,11 +141,13 @@ class Board:
             return True
 
         if check and not self.validate_new_squares(p):
-            logging.error("No new square added")
+            if log:
+                logging.error("No new square added")
             return False
 
         if check and not new_piece_touching:
-            logging.error("New Piece Doesn't touch any previous pieces")
+            if log:
+                logging.error("New Piece Doesn't touch any previous pieces")
             return False
 
         """
@@ -165,7 +172,8 @@ class Board:
                                 # check if old line is between the new y values
                                 new_coor_list[0][1] < board_line_coor[0][1] < new_coor_list[1][1] or
                                 new_coor_list[1][1] < board_line_coor[0][1] < new_coor_list[0][1])):
-                    logging.error("Piece Crosses a previous piece")
+                    if log:
+                        logging.error("Piece Crosses a previous piece")
                     return False
         return True
 
@@ -177,6 +185,7 @@ class Board:
 
 
     def add_piece(self, player_num: int, piece_num=1, permutation_index=1, coordinates=(15, 15), first=False, check=True):
+        global log
         if 1 <= piece_num <= 16 and 1 <= permutation_index <= 8:
             if self.check_piece_placement_wrapper(piece_num, permutation_index, coordinates, first, check):
                 new_piece = Piece(piece_num)
@@ -190,9 +199,11 @@ class Board:
                 logging.info("Piece added to board")
                 return True
             else:
-                logging.error("Piece NOT added to board")
+                if log:
+                    logging.error("Piece NOT added to board")
         else:
-            logging.error("Illegal piece number or permutation")
+            if log:
+                logging.error("Illegal piece number or permutation")
         return False
 
     def inner_squares_counter(self, possible_squares, board_lines, last_piece: Piece):

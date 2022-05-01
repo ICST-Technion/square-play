@@ -112,13 +112,13 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
             //exit game!
             Debug.LogError("Connection Failed");
         }
-        Debug.Log("Connected");
+        //Debug.Log("Connected");
     }
 
     private void endSocket()
     {
         client.Close();
-        Debug.Log("Disconnected");
+        //Debug.Log("Disconnected");
     }
 
     void OnApplicationQuit()
@@ -177,7 +177,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     {
         try
         {
-            this.dataOut = new int[5] { playerNum, pieceNum, permutation + 1, new_position_x, new_position_y };
+            //Adding 1 to player num since here player nums are: 0-3, while in backend they are 1-4
+            this.dataOut = new int[5] { playerNum + 1, pieceNum, permutation, new_position_x, new_position_y };
             this.dataIn = sendMoveMsg();
             this.printDataIn();
             return this.dataIn;
@@ -290,7 +291,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     {
         try
         {
-            this.dataOut = new int[1] { playerNum };
+            //Adding 1 to player num since here player nums are: 0-3, while in backend they are 1-4
+            this.dataOut = new int[1] { playerNum + 1 };
             this.dataIn = sendAiMoveRequestMsg();
             this.printDataIn();
             return this.dataIn;

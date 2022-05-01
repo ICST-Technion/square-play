@@ -98,8 +98,8 @@ def remoteMain():
             #c.close()
 
         except Exception as e:
-            print("error:")
-            print(e)
+            '''print("error:")
+            print(e)'''
             c.sendall(bytearray([]))
             c.close()
             break

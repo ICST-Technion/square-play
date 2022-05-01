@@ -185,8 +185,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -402, y: 714}
-  m_SizeDelta: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!61 &1209368894569989584
 BoxCollider2D:
@@ -223,7 +223,7 @@ Canvas:
   m_GameObject: {fileID: 2068695783322832565}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 2
+  m_RenderMode: 1
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -257,7 +257,9 @@ MonoBehaviour:
   - {fileID: 7989241284257943277}
   - {fileID: 7391076977044987038}
   piece_num: 8
+  permutation: 0
   isFinalPos: 0
+  chooseCellForMe: 0
   playerNum: 0
 --- !u!114 &4886004309909191377
 MonoBehaviour:

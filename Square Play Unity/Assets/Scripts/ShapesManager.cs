@@ -12,7 +12,7 @@ public class ShapesManager : MonoBehaviour
     //[HideInInspector]
     public int currentPlayer = 2;
 
-    [HideInInspector]
+    //[HideInInspector]
     public int numOfPossiblePermutations = 8;
     [HideInInspector]
     public float spacingFactor;
@@ -62,13 +62,13 @@ public class ShapesManager : MonoBehaviour
         this.gameScale = this.gameManager.scaleFactor;
         this.spacingFactor = 2.35f * (this.gameManager.scaleFactor + 10);
 
-        setupShapes(Color.cyan, gameManager.players[0], true);
+        setupShapes(Color.blue, gameManager.players[0], true);
 
-        setupShapes(Color.black, gameManager.players[1]);
+        setupShapes(Color.yellow, gameManager.players[1]);
 
         setupShapes(Color.red, gameManager.players[2], isDown: true);
-
-        setupShapes(Color.green, gameManager.players[3]);
+        Color green = new Color(0.45f, 1f, 0.70f);
+        setupShapes(green, gameManager.players[3]);
 
     }
 
@@ -78,7 +78,6 @@ public class ShapesManager : MonoBehaviour
         Vector3 textPos = bank.transform.GetChild(0).localPosition;
         var absoluteX = bank.transform.localPosition.x + textPos.x;
         var absoluteY = bank.transform.localPosition.y + textPos.y;
-        //Later: calculate additions according to the widths and heigths of bank and text..
         if (isUp)
         {
             absoluteX += 70;
@@ -86,7 +85,6 @@ public class ShapesManager : MonoBehaviour
         }
         else if (isDown)
         {
-            print("hey");
             absoluteX += 70;
             absoluteY += 40;
         }
@@ -100,7 +98,6 @@ public class ShapesManager : MonoBehaviour
 
         bank.playerShapes.ForEach(delegate (BaseShape shape)
         {
-            //Later: transfer the starting position to setup too.
             shape.Setup(teamColor, this);
             float new_x = absoluteX + x_add * spacingFactor;
             float new_y = absoluteY - y_add * spacingFactor;
@@ -133,12 +130,15 @@ public class ShapesManager : MonoBehaviour
 
     public void currentPlayerClosedSquares(int numberClosed)
     {
+
         if (numberClosed > 1)
         {
             this.numOfMovesForCurrentPlayer += numberClosed;
         }
-        print(this.numOfMovesForCurrentPlayer);
+        print(this.currentPlayer + " closed: " + numberClosed + " squares");
     }
+
+
 
     private void setInteractive(List<BaseShape> allShapes, bool value)
     {
@@ -150,7 +150,6 @@ public class ShapesManager : MonoBehaviour
                 MoveShapeForAi(aiMove, allShapes);
                 if (this.isFirstTurn)
                 {
-                    print("hey");
                     this.endFirstMove();
                 }
             }
@@ -162,8 +161,7 @@ public class ShapesManager : MonoBehaviour
         int newX = aiMove[2];
         int newY = aiMove[3];
         int shapeNum = aiMove[0];
-        int permutation = aiMove[1] - 1;
-        this.currentPlayerClosedSquares(aiMove[4]);
+        int permutation = aiMove[1];
         allShapes.ForEach(delegate (BaseShape shape)
         {
             if (shape.piece_num == shapeNum)
@@ -172,10 +170,12 @@ public class ShapesManager : MonoBehaviour
                 return;
             }
         });
+        this.currentPlayerClosedSquares(aiMove[4]);
     }
 
     public void switchTurn()
     {
+        print("switching turn of player " + this.currentPlayer + " , who has: " + this.numOfMovesForCurrentPlayer + " moves left");
         if (this.numOfMovesForCurrentPlayer <= 1)
         {
             this.currentPlayer = (currentPlayer + 1) % 4;
@@ -198,6 +198,10 @@ public class ShapesManager : MonoBehaviour
         else
         {
             this.numOfMovesForCurrentPlayer--;
+            if (!this.isHeHuman())
+            {
+
+            }
         }
 
     }
@@ -223,7 +227,8 @@ public class ShapesManager : MonoBehaviour
         int idx = 0;
         foreach (string item in this.shapeOrder)
         {
-            if (shapeClassName.Contains(item))
+            var onlyname = shapeClassName.Split('_')[0];
+            if (onlyname == item)
             {
                 return idx + 1;
             }
@@ -243,7 +248,7 @@ public class ShapesManager : MonoBehaviour
         return res;
     }
 
-    public int[] sendMove(int shapeNum, int permutation, int new_position_x, int new_position_y) => this.gameManager.msgMoveToServer(this.currentPlayer + 1, shapeNum, permutation, new_position_x, new_position_y);
+    public int[] sendMove(int shapeNum, int permutation, int new_position_x, int new_position_y) => this.gameManager.msgMoveToServer(this.currentPlayer, shapeNum, permutation, new_position_x, new_position_y);
 
     public bool isPositionedInBoard(Vector3 pos) => this.gameManager.board.isInBoard(pos);
 
@@ -341,7 +346,6 @@ public class ShapesManager : MonoBehaviour
 
         foreach (var shapeName in shapeOrder)
         {
-
             var shapesEntery = shapeLibrary[shapeName];
             var shapeClass = shapesEntery.Item1;
             var shapesType = shapesEntery.Item2;

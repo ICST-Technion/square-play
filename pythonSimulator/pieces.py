@@ -128,6 +128,7 @@ class Piece:
         self.possible_squares = new_possible_squares
 
     def permutate(self, rotates=0, flip=False):
+        print("for shape: ")
         if flip:
             self.x_axis_flip()
 

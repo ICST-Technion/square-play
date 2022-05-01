@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-//using UnityEngine.;
 
 public abstract class BaseShape : MonoBehaviour
 {
@@ -20,7 +19,7 @@ public abstract class BaseShape : MonoBehaviour
 
     public int piece_num;
 
-    protected int permutation = 0;
+    public int permutation = 1;
 
     public bool isFinalPos = false;
 
@@ -39,6 +38,12 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.localRotation = Quaternion.identity;
         int.TryParse(this.name.Split('_')[1], out this.playerNum);
         this.playerNum -= 1;
+        this.permutation = 1;
+        foreach (var line in this.assemblingLines)
+        {
+            line.GetComponent<LineRenderer>().startColor = newTeamColor;
+            line.GetComponent<LineRenderer>().endColor = newTeamColor;
+        }
     }
 
     private Transform startTransformation;
@@ -63,7 +68,6 @@ public abstract class BaseShape : MonoBehaviour
         int new_position_y = this.nearestCell.y;
 
         //Check that move is valid with logic function
-        print("sending move for shape : " + this.name);
         int[] response = this.shapeManager.sendMove(piece_num, permutation, new_position_x, new_position_y);
         if (response[0] != -1)
         {
@@ -85,28 +89,53 @@ public abstract class BaseShape : MonoBehaviour
         //By default, there is a maximum of 8 permutations.
         switch (permutation)
         {
-            case 1:
-                return new int[] { 0, 0, 270, 0 };
-            case 3:
-                return new int[] { 0, 0, -270, 0 };
             case 2:
-                return new int[] { 0, 0, 180, 0 };
+                return new int[] { 0, 0, 270, 0 };
             case 4:
-                return new int[] { 0, 180, 0, 0 };
+                return new int[] { 0, 0, -270, 0 };
+            case 3:
+                return new int[] { 0, 0, 180, 0 };
             case 5:
-                return new int[] { 0, 180, 270, 0 };
-            case 8:
-                return new int[] { 0, 180, -270, 0 };
+                return new int[] { 0, 180, 0, 0 };
             case 6:
-                return new int[] { 180, 0, 0, 0 };
-            case 7:
-                return new int[] { 180, 0, 270, 0 };
+                return new int[] { 0, 180, 270, 0 };
             case 9:
+                return new int[] { 0, 180, -270, 0 };
+            case 7:
+                return new int[] { 180, 0, 0, 0 };
+            case 8:
+                return new int[] { 180, 0, 270, 0 };
+            case 10:
                 return new int[] { 180, 0, -90, 0 };
             default:
                 return new int[] { 0, 0, 0, 0 }; ;
         }
     }
+
+    private int[] getPosAdditionByPerm(int permutation)
+    {
+        //By default, there is a maximum of 8 permutations.
+        switch (permutation)
+        {
+            case 2:
+                return new int[] { -200, -300 };
+            case 3:
+                return new int[] { -10, -170 };
+            case 4:
+                return new int[] { -10, -270 };
+            case 5:
+                return new int[] { 200, -100 };
+            case 6:
+                return new int[] { 200, -300 };
+            case 7:
+                return new int[] { 450, -170 };
+            case 8:
+                return new int[] { 450, -270 };
+            default:
+                return new int[] { -200, -100 }; ;
+        }
+    }
+
 
     void Update()
     {
@@ -123,24 +152,34 @@ public abstract class BaseShape : MonoBehaviour
 
     private bool amITheChosenPermutation = false;
     private List<BaseShape> rotationsShown = new List<BaseShape>();
+
+    private void changeLinesLyaer(List<GameObject> lines)
+    {
+        foreach (GameObject line in lines)
+        {
+            line.GetComponent<LineRenderer>().sortingOrder += 2;
+        }
+    }
     public void showPossibleRotations()
     {
         rotateMe = true;
         this.shapeManager.showRotationsForShape.SetActive(true);
-
-        for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+        var reference_point = this.shapeManager.showRotationsForShape.transform.GetChild(0).transform.localPosition;
+        print("ref point: " + reference_point[0] + "," + reference_point[1]);
+        print(this.shapeManager.numOfPossiblePermutations);
+        for (int i = 1; i <= this.shapeManager.numOfPossiblePermutations; i++)
         {
             var rot = getRotationByPermutation(i);
-            //Quaternion qut = Quaternion.Euler();
-            var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
-            var pos = childMatch.transform.localPosition;
-            childMatch.gameObject.SetActive(false);
+            var pos = shapeManager.showRotationsForShape.transform.localPosition;
+            var additon = getPosAdditionByPerm(i);
+            pos.x = reference_point[0] + additon[0];
+            pos.y = reference_point[1] + additon[1];
             BaseShape rotated = Instantiate(this, this.shapeManager.showRotationsForShape.transform, false);
-
-            rotated.name = "permutation_" + i.ToString();
+            rotated.name = "permutation_" + (i).ToString();
             rotated.transform.localPosition = pos;
             rotated.transform.Rotate(new Vector3(rot[0], rot[1], rot[2]), Space.Self);
             rotated.permutation = i;
+            changeLinesLyaer(rotated.assemblingLines);
             rotationsShown.Add(rotated);
         }
     }
@@ -167,7 +206,6 @@ public abstract class BaseShape : MonoBehaviour
     {
         this.transform.SetParent(this.shapeManager.boardtrans);
         transform.localPosition = new Vector3(new_position_x, new_position_y);
-        print("moving ai shape to: " + new_position_x.ToString() + " " + new_position_y.ToString());
         this.nearestCell = this.getNearesetCell();
         this.rotateByPermutation(permutation);
         Place();
@@ -223,18 +261,15 @@ public abstract class BaseShape : MonoBehaviour
         {
             if (this.shapeManager.gameManager.rotationMode)
             {
-                print("rotate");
                 if (this.shapeManager.gameManager.choosingRotationMode)
                 {
-                    print("chose rot!");
                     this.amITheChosenPermutation = true;
                     this.shapeManager.gameManager.choosingRotationMode = false;
                     this.shapeManager.showRotationsForShape.SetActive(false);
                     this.shapeManager.gameManager.rotationMode = false;
                     this.shapeManager.gameManager.chosenRotation = permutation;
                     this.shapeManager.gameManager.gameCanvas.chooseRotation(permutation);
-                    print("chosen perm : " + this.permutation.ToString());
-                    for (int i = 0; i < this.shapeManager.numOfPossiblePermutations; i++)
+                    for (int i = 1; i <= this.shapeManager.numOfPossiblePermutations; i++)
                     {
                         //var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
                         //childMatch.gameObject.SetActive(true);
@@ -244,7 +279,6 @@ public abstract class BaseShape : MonoBehaviour
                 }
                 else
                 {
-                    print("show rot");
                     this.showPossibleRotations();
                     this.shapeManager.gameManager.choosingRotationMode = true;
                 }
