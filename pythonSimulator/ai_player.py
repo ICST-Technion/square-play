@@ -329,8 +329,7 @@ class Ai_player:
                             if True:  # andom.random() < prob :#or True:#######################
                                 # new_board = copy.deepcopy(board) if new_board.add_piece(current_player, piece,
                                 # permutation, (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
-                                if board.check_piece_placement_wrapper(piece, permutation, (game_cord_x, game_cord_y),
-                                                                       False):
+                                if board.check_piece_placement_wrapper(piece, permutation, (game_cord_x, game_cord_y), False):
                                     new_board = copy.deepcopy(board)
                                     if new_board.add_piece(current_player, piece, permutation,
                                                            (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:
@@ -342,11 +341,12 @@ class Ai_player:
             # exit()
             ########################################3
             print("number of possabilitis:" + str(len(turn_options)))
-            # lets sort by turn posibilitis and if peace gives us another turn -> lets choose first piece that gives more shpitzim
+            # lets sort by turn posibilitis and if peace gives us another turn -> lets choose first piece that gives
+            # more shpitzim
             turn_options.sort(key=lambda x: self.score_of_state_to_sort_childs(x[0]), reverse=True)
             if len(turn_options) > 4:
                 turn_options = turn_options[:max(4, int(self.prob * len(turn_options)))]
-            print("number of possabilitis now is::" + str(len(turn_options)))
+            print("number of possibilities now is::" + str(len(turn_options)))
             ###########################################
             if current_player == 0:
                 best_val = -inf
@@ -462,8 +462,7 @@ class Ai_player:
             for permutation in self.shape_permutation[piece]:
                 for game_cord_x in range(0, 32):
                     for game_cord_y in range(0, 32):
-                        if board.check_piece_placement_wrapper(piece, permutation, (game_cord_x, game_cord_y),
-                                                               False):
+                        if board.check_piece_placement_wrapper(piece, permutation, (game_cord_x, game_cord_y), False):
                             new_board = copy.deepcopy(board)
                             if new_board.add_piece(0, piece, permutation,
                                                    (game_cord_x, game_cord_y)) and new_board.count_new_squares() > 0:

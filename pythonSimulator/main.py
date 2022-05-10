@@ -1,10 +1,11 @@
 from eventgame import EventGame
-# from interactivegame import InteractiveGame
+from interactivegame import InteractiveGame
 from player import Player
 import socket
 import numpy as np
 import struct
 from buildChallenge import BuildChallenge
+
 
 def remoteMain():
     s = socket.socket()
@@ -106,7 +107,8 @@ def remoteMain():
 
 if __name__ == '__main__':
     # ---------------------- INTERACTIVE GAME ----------------------
-    '''print("Welcome to Square Game")
+    '''
+    print("Welcome to Square Game")
     number_of_players = int(input("Enter number of players, between 2 and 4:\n"))
     while not 2 <= number_of_players <= 4:
         number_of_players = int(input("Invalid Number of players, try again"))
@@ -115,7 +117,7 @@ if __name__ == '__main__':
         player_list.append(Player(f"Player_{i + 1}"))
     test_Game = InteractiveGame(player_list)
     test_Game.gameplay()
-'''
+    '''
     # ---------------------- EVENT GAME ----------------------
     """
     print("Welcome to Square Game")
@@ -134,6 +136,7 @@ if __name__ == '__main__':
     remoteMain()
     """
     # ---------------------- INTERACTIVE BUILDING GAME ----------------------
+    """
     bc = BuildChallenge()
     while not bc.challenge_finished:
         bc.print_state()
@@ -156,3 +159,4 @@ if __name__ == '__main__':
 
         if bc.challenge_finished:
             bc.print_state()
+    """

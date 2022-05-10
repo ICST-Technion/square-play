@@ -30,14 +30,13 @@ class EventGame:
         board = Board()
         for piece in data:
             if not board.add_piece(player_num=piece["player_num"],
-                        piece_num=piece["piece_num"],
-                        permutation_index=piece["permutation"],
-                        coordinates=(piece["x"], piece["y"]), check=False):
+                                   piece_num=piece["piece_num"],
+                                   permutation_index=piece["permutation"],
+                                   coordinates=(piece["x"], piece["y"]), check=False):
                 return (board, 0)
-            player_num = piece["player_num"]-1
+            player_num = piece["player_num"] - 1
             self.players[player_num].remove_piece(piece["piece_num"])
         return (board, 1)
-
 
     def execute_moves(self, moves, add_first_move):
         results = [2] if add_first_move else []
@@ -47,13 +46,12 @@ class EventGame:
                 results.append(result)
             elif move["type"] == 1:
                 result = self.move(move["player_num"], move["piece_num"],
-                                move["permutation"], move["x"], move["y"])
+                                   move["permutation"], move["x"], move["y"])
                 results.append(result)
             else:
                 logging.error("unsupported move type")
                 results.append(-1)
         return results
-
 
     def load_game(self, game_file):
         with open(game_file, "r") as game_json:
@@ -71,19 +69,17 @@ class EventGame:
         else:
             first_move = moves[0]
             if self.start_game(first_move["piece_num"],
-                                first_move["permutation"]) == -1:
+                               first_move["permutation"]) == -1:
                 self.started = False
                 return -1
             moves = moves[1:]
             return self.execute_moves(moves, True)
 
-
     def store_game(self, game_file):
-        dict = { "board": [], "moves": self.good_moves }
+        dict = {"board": [], "moves": self.good_moves}
         with open(os.path.join("./saved_games", game_file), "w") as game_json:
             json.dump(dict, game_json, indent=4)
         self.started = False
-             
 
     def start_game(self, piece_num=-1, permutation=-1):
         if self.game_finished:
@@ -196,12 +192,13 @@ class EventGame:
 
             if new_squares != 0:
                 curr_player.add_moves(new_squares - 1)
-                logging.info(f"{curr_player.name} got {new_squares - 1} more moves with a total of {curr_player.moves_left()} left")
+                logging.info(
+                    f"{curr_player.name} got {new_squares - 1} more moves with a total of {curr_player.moves_left()} left")
 
-            self.good_moves.append({"type": 1, "player_num": player_num, 
-                                            "piece_num": piece_num, 
-                                            "permutation": permutation, 
-                                            "x": x_coor, "y": y_coor})
+            self.good_moves.append({"type": 1, "player_num": player_num,
+                                    "piece_num": piece_num,
+                                    "permutation": permutation,
+                                    "x": x_coor, "y": y_coor})
             if curr_player.is_player_finished():
                 logging.info("Final Round for players with less turns")
                 self.final_round_cnt = len(self.playing_players) - self.playing_players.index(self.curr_player_num) - 1
