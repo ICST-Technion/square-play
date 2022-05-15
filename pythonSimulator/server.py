@@ -19,11 +19,11 @@ current_games = {}
 """
 EXAMPLE GAME:
 http://127.0.0.1:5000/start_new_game?p1=p_1&p2=p_2&p3=AI_Player1&p4=AI_Player2
-http://127.0.0.1:5000/first_move?gid={insert game id}&piece=2&perm=1
-http://127.0.0.1:5000/reg_move?gid={insert game id}&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
-http://127.0.0.1:5000/pass_turn?gid={insert game id}&p_num=2
-http://127.0.0.1:5000/ai_move?gid={insert game id}
-http://127.0.0.1:5000/end_game?gid={insert game id}
+http://127.0.0.1:5000/first_move?gid=1298297976736304479&piece=2&perm=1
+http://127.0.0.1:5000/reg_move?gid=1298297976736304479&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
+http://127.0.0.1:5000/pass_turn?gid=1298297976736304479&p_num=2
+http://127.0.0.1:5000/ai_move?gid=1298297976736304479
+http://127.0.0.1:5000/end_game?gid=1298297976736304479
 """
 
 @app.get('/')
@@ -53,12 +53,14 @@ async def start_new_game(p1: str = 'NULL', p2: str = 'NULL',
     print("Names:")
     print(player_names)
     new_game_id = hash(datetime.datetime.now().isoformat() + str(player_names))
+    print(new_game_id)
     current_games[new_game_id] = EventGame(players)
     return {"game_id": str(new_game_id)}
 
 
 @app.get('/first_move')
 async def first_move(gid: int, piece: int, perm: int):
+    print("hi",gid not in current_games)
     if gid not in current_games:
         return {'Result': '[-22]'}
     game = current_games[gid]
@@ -103,7 +105,7 @@ async def ai_move(gid: int):
             to_send = send_arr
     else:
         to_send = [-1]
-    to_send.append(game.last_new_squares)
+    to_send=np.append(to_send,game.last_new_squares)
     return {'Result': str(to_send)}
 
 

@@ -169,7 +169,7 @@ class Board:
                     return False
         return True
 
-    def check_piece_placement_wrapper(self, piece_num, permutation_index, coordinates, first, check):
+    def check_piece_placement_wrapper(self, piece_num, permutation_index, coordinates, first, check=False):
         new_piece = Piece(piece_num)
         new_piece = self.piece_permutation(new_piece, permutation_index)
         new_piece.add_coordinates(coordinates[0], coordinates[1])
