@@ -18,4 +18,12 @@ public class MenuUI : MonoBehaviour
     {
         SceneManager.LoadScene(3);
     }
+    public void viewAboutPage()
+    {
+        SceneManager.LoadScene(2);
+    }
+    public void viewRulesPage()
+    {
+        SceneManager.LoadScene(3);
+    }
 }
