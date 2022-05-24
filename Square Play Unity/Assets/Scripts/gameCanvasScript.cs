@@ -7,12 +7,14 @@ using TMPro;
 using System.Threading.Tasks;
 public class gameCanvasScript : MonoBehaviour
 {
-
+    public Button competitveAgainButton;
+    public Button competitveBackButton;
     public CompetitiveGameManager manager;
     // Start is called before the first frame update
     void Start()
     {
-
+        competitveAgainButton.onClick.AddListener(async () => await playAgain());
+        competitveBackButton.onClick.AddListener(async () => await goBack());
     }
 
     // Update is called once per frame
@@ -23,12 +25,14 @@ public class gameCanvasScript : MonoBehaviour
 
     public async Task playAgain()
     {
+        print("again");
         await manager.msgNamesToServer();
         await manager.startGame();
     }
 
-    public void goBack()
+    public async Task goBack()
     {
+        await manager.byeBye();
         SceneManager.LoadScene(1);
     }
 

@@ -152,6 +152,12 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
 
     }
 
+    public async Task byeBye()
+    {
+        print("bye bye!");
+        await client.GetAsync(server_http_addr + "end_game?gid=" + currentGameId);
+    }
+
     private void parseReply(string result, int code = 0)//
     {
         string[] addition = { };

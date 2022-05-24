@@ -1339,19 +1339,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 92257536}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1627142085}
-        m_TargetAssemblyTypeName: gameCanvasScript, Assembly-CSharp
-        m_MethodName: goBack
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
+      m_Calls: []
 --- !u!114 &92257536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6815,19 +6803,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 869749209}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1559739299}
-        m_TargetAssemblyTypeName: competitveGameCanvasScript, Assembly-CSharp
-        m_MethodName: goBack
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
+      m_Calls: []
 --- !u!114 &869749209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13085,6 +13061,7 @@ MonoBehaviour:
   gameCanvas: {fileID: 1627142079}
   preCanvas: {fileID: 1559739293}
   playGameButton: {fileID: 41084227}
+  pregameBackButton: {fileID: 869749208}
   playerNamesText:
   - {fileID: 462031194}
   - {fileID: 838530733}
@@ -14040,6 +14017,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9e4af718551ce14799209d900feea13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  competitveAgainButton: {fileID: 2021862263}
+  competitveBackButton: {fileID: 92257535}
   manager: {fileID: 1534510779}
 --- !u!114 &1635676576 stripped
 MonoBehaviour:
@@ -16739,19 +16718,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2021862264}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1627142085}
-        m_TargetAssemblyTypeName: gameCanvasScript, Assembly-CSharp
-        m_MethodName: playAgain
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
+      m_Calls: []
 --- !u!114 &2021862264
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18357,6 +18324,8 @@ MonoBehaviour:
   spacingFactor: 0
   numOfMovesForCurrentPlayer: 0
   gameScale: 33
+  start_shape_width: 0.5
+  end_shape_width: 7
   turnStatisticsPlayerName: {fileID: 1145276867}
   turnStatisticsNumOfMoves: {fileID: 1040408001}
   gameManager: {fileID: 0}

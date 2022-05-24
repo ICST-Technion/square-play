@@ -42,6 +42,7 @@ public abstract class BaseShape : MonoBehaviour
         {
             line.GetComponent<LineRenderer>().startColor = newTeamColor;
             line.GetComponent<LineRenderer>().endColor = newTeamColor;
+            line.GetComponent<LineRenderer>().widthMultiplier = 0.6f;
         }
     }
 

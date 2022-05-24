@@ -22,6 +22,9 @@ public class ShapesManager : MonoBehaviour
 
     private bool currentPlayerContinues = false;
 
+    public float start_shape_width = 0.5f;
+    public float end_shape_width = 7;
+
     public GameObject turnStatisticsPlayerName;
 
     public GameObject turnStatisticsNumOfMoves;
@@ -67,7 +70,8 @@ public class ShapesManager : MonoBehaviour
         setupShapes(Color.yellow, gameManager.players[1]);
 
         setupShapes(Color.red, gameManager.players[2], isDown: true);
-        Color green = new Color(0.45f, 1f, 0.70f);
+
+        Color green = new Color32(60, 179, 113, 255);
         setupShapes(green, gameManager.players[3]);
 
     }

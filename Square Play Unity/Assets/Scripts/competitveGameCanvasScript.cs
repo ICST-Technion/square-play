@@ -13,6 +13,7 @@ public class competitveGameCanvasScript : MonoBehaviour
     public GameObject gameCanvas;
     public GameObject preCanvas;
     public Button playGameButton;
+    public Button pregameBackButton;
     public List<GameObject> playerNamesText;
 
     public List<GameObject> namesInput;
@@ -26,13 +27,11 @@ public class competitveGameCanvasScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        /*Disabled for tests only*/
         gameCanvas.SetActive(false);
         preCanvas.SetActive(true);
+
         playGameButton.onClick.AddListener(async () => await startGame());
-        /*Test*/
-        //gameCanvas.SetActive(true);
-        //preCanvas.SetActive(false);
+        pregameBackButton.onClick.AddListener(async () => await goBack());
     }
 
     // Update is called once per frame
@@ -40,13 +39,10 @@ public class competitveGameCanvasScript : MonoBehaviour
     {
 
     }
-    public void playAgain()
-    {
-        SceneManager.LoadScene(1);
-    }
 
-    public void goBack()
+    public async Task goBack()
     {
+        await manager.byeBye();
         SceneManager.LoadScene(0);
     }
 

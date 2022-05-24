@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class CellClass : MonoBehaviour
 {
+    //Original color: C37926
     public int x;
     public int y;
     public float upper_right_x;
