@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEditor;
 using TMPro;
+using System.Threading.Tasks;
 
 public class ShapesManager : MonoBehaviour
 {
@@ -22,6 +20,8 @@ public class ShapesManager : MonoBehaviour
 
     public int gameScale = 33;
 
+    private bool currentPlayerContinues = false;
+
     public GameObject turnStatisticsPlayerName;
 
     public GameObject turnStatisticsNumOfMoves;
@@ -38,7 +38,7 @@ public class ShapesManager : MonoBehaviour
 
     private string[] shapeOrder = new string[16]
     {
-        "Six","H","shape3","Gimel","F","E","P","A","notnot","ground","Five","chair","G","C","Seven","Lambda"
+        "Six","H","shape3","Gimel","F","E","P","A","notnot","ground","Five","chair","G","C","Lambda","Seven"
     };
 
     /*
@@ -130,38 +130,42 @@ public class ShapesManager : MonoBehaviour
 
     public void currentPlayerClosedSquares(int numberClosed)
     {
-
         if (numberClosed > 1)
         {
-            this.numOfMovesForCurrentPlayer += numberClosed;
+            this.numOfMovesForCurrentPlayer += numberClosed - 1;
+        }
+        else
+        {
+            this.numOfMovesForCurrentPlayer = 0;
         }
         print(this.currentPlayer + " closed: " + numberClosed + " squares");
     }
 
 
 
-    private void setInteractive(List<BaseShape> allShapes, bool value)
+    private async Task setInteractive(List<BaseShape> allShapes, bool value)
     {
         if (!this.isHeHuman() && value)
         {
-            int[] aiMove = this.requestAiMove();
+            int[] aiMove = await this.requestAiMove();
             if (aiMove.Length > 2)
             {
-                MoveShapeForAi(aiMove, allShapes);
+                await MoveShapeForAi(aiMove, allShapes);
                 if (this.isFirstTurn)
                 {
-                    this.endFirstMove();
+                    await this.endFirstMove();
                 }
             }
         }
     }
 
-    private void MoveShapeForAi(int[] aiMove, List<BaseShape> allShapes)
+    private async Task MoveShapeForAi(int[] aiMove, List<BaseShape> allShapes)
     {
-        int newX = aiMove[2];
-        int newY = aiMove[3];
         int shapeNum = aiMove[0];
         int permutation = aiMove[1];
+        int newX = aiMove[2];
+        int newY = aiMove[3];
+        int closed_squares = aiMove[4];
         allShapes.ForEach(delegate (BaseShape shape)
         {
             if (shape.piece_num == shapeNum)
@@ -170,27 +174,34 @@ public class ShapesManager : MonoBehaviour
                 return;
             }
         });
-        this.currentPlayerClosedSquares(aiMove[4]);
+        if (!this.isFirstTurn)
+        {
+            this.currentPlayerClosedSquares(closed_squares);
+            await this.switchTurn();
+        }
     }
 
-    public void switchTurn()
+    public async Task switchTurn()
     {
-        print("switching turn of player " + this.currentPlayer + " , who has: " + this.numOfMovesForCurrentPlayer + " moves left");
-        if (this.numOfMovesForCurrentPlayer <= 1)
+        print("For player number: " + this.currentPlayer + " there are, " +
+         this.numOfMovesForCurrentPlayer + " moves left");
+        if (this.numOfMovesForCurrentPlayer == 0)
         {
             this.currentPlayer = (currentPlayer + 1) % 4;
-            print("switched to: " + this.currentPlayer);
+            print("Switched to: " + this.currentPlayer);
             this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text = this.gameManager.players[this.currentPlayer].playerName + "'s Turn:";
 
-            setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
+            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
 
-            setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
+            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
 
-            setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
+            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
 
-            setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
+            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
 
             this.numOfMovesForCurrentPlayer = 1;
+
+            this.currentPlayerContinues = false;
 
             this.turnStatisticsNumOfMoves.GetComponent<TextMeshProUGUI>().text = "Moves Left: " + this.numOfMovesForCurrentPlayer.ToString();
 
@@ -198,28 +209,37 @@ public class ShapesManager : MonoBehaviour
         else
         {
             this.numOfMovesForCurrentPlayer--;
+            this.currentPlayerContinues = true;
             if (!this.isHeHuman())
             {
+                await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
+
+                await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
+
+                await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
+
+                await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
+
+                this.turnStatisticsNumOfMoves.GetComponent<TextMeshProUGUI>().text = "Moves Left: " + this.numOfMovesForCurrentPlayer.ToString();
 
             }
         }
 
     }
-    public void startGame()
+    public async Task startGame()
     {
         this.currentPlayer = 2;
-        this.numOfMovesForCurrentPlayer = 1;
+        this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = true;
-        this.switchTurn();
+        await this.switchTurn();
 
     }
 
-    private void endFirstMove()
+    private async Task endFirstMove()
     {
         this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = false;
-        this.switchTurn();
-
+        await this.switchTurn();
     }
 
     public int getPieceNumByType(string shapeClassName)
@@ -241,20 +261,21 @@ public class ShapesManager : MonoBehaviour
 
 
     #region Backend communication
-    public int[] sendStartGame(int shapeNum, int permutation)
+    public async Task<int[]> sendStartGame(int shapeNum, int permutation)
     {
-        var res = this.gameManager.msgGameStartToServer(shapeNum, permutation);
-        this.endFirstMove();
+        var res = await this.gameManager.msgGameStartToServer(shapeNum, permutation);
+        await this.endFirstMove();
         return res;
     }
 
-    public int[] sendMove(int shapeNum, int permutation, int new_position_x, int new_position_y) => this.gameManager.msgMoveToServer(this.currentPlayer, shapeNum, permutation, new_position_x, new_position_y);
+    public async Task<int[]> sendMove(int shapeNum, int permutation, int new_position_x, int new_position_y)
+       => await this.gameManager.msgMoveToServer(this.currentPlayer, shapeNum, permutation, new_position_x, new_position_y);
 
     public bool isPositionedInBoard(Vector3 pos) => this.gameManager.board.isInBoard(pos);
 
     public CellClass getNearestCell(Vector3 pos) => this.gameManager.board.getCellByCoordinates(pos);
 
-    public int[] requestAiMove() => this.gameManager.msgAiMoveRequestToServer(this.currentPlayer);
+    public async Task<int[]> requestAiMove() => await this.gameManager.msgAiMoveRequestToServer(this.currentPlayer, this.currentPlayerContinues);
 
     public bool isHeHuman() => !this.gameManager.players[this.currentPlayer].isAi; //true if the current player isnt Ai player
 

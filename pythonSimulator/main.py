@@ -1,5 +1,5 @@
 from eventgame import EventGame
-# from interactivegame import InteractiveGame
+from interactivegame import InteractiveGame
 from player import Player
 import socket
 import numpy as np
@@ -69,10 +69,11 @@ def remoteMain():
                         if to_send != [-1]:
                             game_started = True
 
-                    if to_send != [-1]:
+                    if to_send != [-1]: 
                         send_arr =[i for i in best_move] 
                         to_send = send_arr
                         send_move_data = True
+                    #remote_game.game_board.print_board()
                 else:
                     to_send = [-1]
 

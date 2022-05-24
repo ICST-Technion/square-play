@@ -1,6 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 public abstract class BaseShape : MonoBehaviour
@@ -57,7 +56,7 @@ public abstract class BaseShape : MonoBehaviour
 
     #region Movement
 
-    public int Move()
+    public async Task<int> Move()
     {
         if (!this.checkPositionInBoard())
         {
@@ -67,8 +66,9 @@ public abstract class BaseShape : MonoBehaviour
         int new_position_x = this.nearestCell.x;
         int new_position_y = this.nearestCell.y;
 
-        //Check that move is valid with logic function
-        int[] response = this.shapeManager.sendMove(piece_num, permutation, new_position_x, new_position_y);
+
+        var response = await this.shapeManager.sendMove(
+            piece_num, permutation, new_position_x, new_position_y);
         if (response[0] != -1)
         {
             var numOfClosed = response[1];
@@ -97,13 +97,13 @@ public abstract class BaseShape : MonoBehaviour
                 return new int[] { 0, 0, 180, 0 };
             case 5:
                 return new int[] { 0, 180, 0, 0 };
-            case 6:
+            case 8:
                 return new int[] { 0, 180, 270, 0 };
             case 9:
                 return new int[] { 0, 180, -270, 0 };
             case 7:
                 return new int[] { 180, 0, 0, 0 };
-            case 8:
+            case 6:
                 return new int[] { 180, 0, 270, 0 };
             case 10:
                 return new int[] { 180, 0, -90, 0 };
@@ -150,7 +150,7 @@ public abstract class BaseShape : MonoBehaviour
 
     private bool rotateMe = false;
 
-    private bool amITheChosenPermutation = false;
+    //private bool amITheChosenPermutation = false;
     private List<BaseShape> rotationsShown = new List<BaseShape>();
 
     private void changeLinesLyaer(List<GameObject> lines)
@@ -192,6 +192,7 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.SetParent(this.nearestCell.transform.parent);
         this.transform.position = this.nearestCell.transform.position;
         this.transform.localPosition = this.nearestCell.upperRightEdge();
+        print("placed!");
     }
 
     protected bool checkPositionInBoard()
@@ -208,11 +209,8 @@ public abstract class BaseShape : MonoBehaviour
         transform.localPosition = new Vector3(new_position_x, new_position_y);
         this.nearestCell = this.getNearesetCell();
         this.rotateByPermutation(permutation);
-        Place();
-        if (!this.shapeManager.isFirstTurn)
-        {
-            this.shapeManager.switchTurn();
-        }
+        this.Place();
+
     }
 
 
@@ -254,7 +252,7 @@ public abstract class BaseShape : MonoBehaviour
         }
     }
 
-    public void OnMouseDown()
+    public async Task OnMouseDown()
     {
         //This function is called once the player has started to drag the object.
         if (!isFinalPos && canBeMoved() && shapeOfHuman())
@@ -263,7 +261,7 @@ public abstract class BaseShape : MonoBehaviour
             {
                 if (this.shapeManager.gameManager.choosingRotationMode)
                 {
-                    this.amITheChosenPermutation = true;
+                    //this.amITheChosenPermutation = true;
                     this.shapeManager.gameManager.choosingRotationMode = false;
                     this.shapeManager.showRotationsForShape.SetActive(false);
                     this.shapeManager.gameManager.rotationMode = false;
@@ -298,19 +296,19 @@ public abstract class BaseShape : MonoBehaviour
                     //In the first turn in the game, the player (4) chooses which shape to position in the middle of the board
                     this.getInitialCell();
                     this.Place();
-                    this.shapeManager.sendStartGame(piece_num, permutation);
+                    await this.shapeManager.sendStartGame(piece_num, permutation);
                 }
             }
         }
     }
 
 
-    public void OnMouseUp()
+    public async Task OnMouseUp()
     {
         //This function is called once the player has finished dragging the object, and put it down.
         if ((!this.shapeManager.gameManager.rotationMode) && canBeMoved() && !isFinalPos && !this.shapeManager.isFirstTurn && shapeOfHuman())
         {
-            if (Move() == -1)
+            if (await Move() == -1)
             {
                 //In case of an illegal move - reset the move.
                 this.shapeManager.shoutAtPlayer();
@@ -322,7 +320,7 @@ public abstract class BaseShape : MonoBehaviour
             {
                 Place();
 
-                shapeManager.switchTurn();
+                await shapeManager.switchTurn();
             }
         }
     }

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using System.Threading.Tasks;
 public class gameCanvasScript : MonoBehaviour
 {
 
@@ -20,10 +21,10 @@ public class gameCanvasScript : MonoBehaviour
 
     }
 
-    public void playAgain()
+    public async Task playAgain()
     {
-        manager.msgNamesToServer();
-        manager.startGame();
+        await manager.msgNamesToServer();
+        await manager.startGame();
     }
 
     public void goBack()

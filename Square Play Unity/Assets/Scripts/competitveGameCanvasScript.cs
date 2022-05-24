@@ -5,12 +5,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using System.Threading.Tasks;
 
 public class competitveGameCanvasScript : MonoBehaviour
 {
     public CompetitiveGameManager manager;
     public GameObject gameCanvas;
     public GameObject preCanvas;
+    public Button playGameButton;
     public List<GameObject> playerNamesText;
 
     public List<GameObject> namesInput;
@@ -27,6 +29,7 @@ public class competitveGameCanvasScript : MonoBehaviour
         /*Disabled for tests only*/
         gameCanvas.SetActive(false);
         preCanvas.SetActive(true);
+        playGameButton.onClick.AddListener(async () => await startGame());
         /*Test*/
         //gameCanvas.SetActive(true);
         //preCanvas.SetActive(false);
@@ -55,15 +58,15 @@ public class competitveGameCanvasScript : MonoBehaviour
         }
     }
 
-    public void startGame()
+    public async Task startGame()
     {
         if (choseNumAuto)
         {
-            manager.msgNamesToServer();
+            await manager.msgNamesToServer();
             this.updateNames();
             gameCanvas.SetActive(true);
             preCanvas.SetActive(false);
-            manager.startGame();
+            await manager.startGame();
         }
         else
         {

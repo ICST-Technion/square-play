@@ -29,6 +29,7 @@ class InteractiveGame:
                 pn = int(pn)
                 pr = int(pr)
                 ret = self.event_g.start_game(pn, pr)
+                #self.event_g.game_board.print_board()
             finally:
                 print("")
                 # pass
@@ -51,4 +52,5 @@ class InteractiveGame:
                 pr = int(pr)
                 coordinates = (int(x), int(y))
                 ret = self.event_g.move(num, pn, pr, coordinates[0], coordinates[1])
+                self.event_g.game_board.print_board()
         return

@@ -1,14 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
-using System.IO;
-using System.Net.Sockets;
 using System;
-
+using System.Threading.Tasks;
+using System.Net.Http;
 
 public class CompetitiveGameManager : MonoBehaviour
 {
@@ -35,18 +31,21 @@ public class CompetitiveGameManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        /*var proc = new System.Diagnostics.Process();
-        proc.StartInfo.FileName = "C:/Users/jonat/Documents/Technion/Final_Project/square-play/Python_Simulator/dist/main";
-        proc.Start();*/
+        server_http_addr = this.url + ":" + this.port + "/";
 
-        /*Disable for tests only!!!! 
-        also, dont foregt to delete whats for test in shapes manager and to set visible the pre game canvas*/
-        this.setupSocket();
+        client = new HttpClient();
 
         board.generate(cols, rows, this); //give that board instance access to the python comm functions, via the socket interface
 
         shapesManager.Setup(this.board, this);
     }
+
+    /*TODO:
+        When a player connects to the game, if he is:
+        - player 1 - than activate player1 prefab and set it to be his prefab ( spawn Player1 prefab for him... )
+        - player 2 - than activate both player1 and player2 prefabs and set player2 to be this player prefab
+        - etc... 
+    */
 
     public void randomizePlayerNames()
     {
@@ -79,10 +78,10 @@ public class CompetitiveGameManager : MonoBehaviour
     {
         StartCoroutine(this.announceNotification(msg));
     }
-    public void startGame()
+    public async Task startGame()
     {
         this.showNotification(players[3].playerName + ", choose the piece you'd like to put in the middle of the board");
-        this.shapesManager.startGame();
+        await this.shapesManager.startGame();
     }
 
 
@@ -90,233 +89,242 @@ public class CompetitiveGameManager : MonoBehaviour
 
     /*
 for a real player move: 
-From Unity: [x position, y position, permutation, player num,shape num]
-Response from Backend: [ number that indicates whether the move was legal,number of squares closed]
+From Unity: [player num,shape num, permutation,x position, y position]
+Response from Backend: [ number that indicates whether the move was legal , number of squares closed]
 
 for ai player move: 
 From Unity: [player num]
 Response from Backend: [ shape num,permutation,x position, y position, number of squares closed]
 */
-    public string ip = "127.0.0.1";
-    public int port = 60000;
-    private Socket client;
+    #region Network helpers
+    private string[] empty = { "", "", "", "", "", "", "" };
+    private int namesCode = 0;
+    private string[] namesFromUnity = { "p1", "p2", "p3", "p4" };
+    private string[] namesRespBack = { "game_id" };
+    private int firstMoveCode = 1;
+    private string[] firstFromUnity = { "piece", "perm" };
+    private string[] firstRespBack = { "d" };
+    private int realMoveCode = 2;
+    private string[] realFromUnity = { "p_num", "piece", "perm", "x_coor", "y_coor" };
+    private string[] realRespBack = { "number that indicates whether the move was legal", "number of squares closed" };
+    private int aiMoveCode = 3;
+    private string[] aiFromUnity = { "p_num" };
+    private string[] aiRespBack = { "shape num", "permutation", "x position", "y position", "number of squares closed" };
+    //private int passTurnCode = 4;
+
+    public struct namesRespBackStr { public string game_id; }
+    public struct firstRespBackStr { public string some; }
+    public struct realRespBackStr { public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
+    public struct aiRespBackStr { public int shape_num; public int permutation; public int x_position; public int y_position; public int number_of_squares_closed; };
     [SerializeField]
-    private int[] dataOut, dataIn;
+    private string[] dataOut;
+    private int[] dataIn;
 
-    private void setupSocket()
-    {
-        client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        client.Connect(ip, port);
-        if (!client.Connected)
-        {
-            //exit game!
-            Debug.LogError("Connection Failed");
-        }
-        //Debug.Log("Connected");
-    }
+    #endregion
+    private string url = "http://132.69.8.19";
+    private string port = "80";
+    public string server_http_addr = "";
+    public string currentGameId = "";
+    private HttpClient client;
+    /*
+        Examples of valid GET messages:
+        http://url:port/start_new_game?p1=p_1&p2=p_2&p3=AI_Player1&p4=AI_Player2
+        http://url:port/first_move?gid=1298297976736304479&piece=2&perm=1
+        http://url:port/reg_move?gid=1298297976736304479&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
+        http://url:port/pass_turn?gid=1298297976736304479&p_num=2
+        http://url:port/ai_move?gid=1298297976736304479
+        http://url:port/end_game?gid=1298297976736304479
+    */
 
-    private void endSocket()
+    private async Task<int[]> sendMessageByCode(int code)
     {
-        client.Close();
-        //Debug.Log("Disconnected");
+        var response = await client.GetAsync(server_http_addr + constructDataOut(code));
+        string result = await response.Content.ReadAsStringAsync();
+        parseReply(result, code);
+        return dataIn;
     }
 
     void OnApplicationQuit()
     {
         print("bye!");
-        sendActionCode(-1, true);
-        endSocket();
+
+        client.GetAsync(server_http_addr + "end_game?gid=" + currentGameId);
+
     }
 
-
-    private void printDataIn()
+    private void parseReply(string result, int code = 0)//
     {
-        print("Received from logic: ");
-        for (int i = 0; i < this.dataIn.Length; i++)
+        string[] addition = { };
+        string str = "Data";
+        dataIn = new int[5];
+        switch (code)
         {
-            Debug.Log(this.dataIn[i]);
+            case 0:
+                addition = namesRespBack;
+                str = "Names";
+                namesRespBackStr nameParesd = JsonUtility.FromJson<namesRespBackStr>(result);
+                dataIn[0] = int.Parse(nameParesd.game_id.Substring(0, 3));
+                this.currentGameId = nameParesd.game_id;
+                break;
+            case 1:
+                addition = firstRespBack;
+                str = "First Move";
+                firstRespBackStr firstParsed = JsonUtility.FromJson<firstRespBackStr>(result);
+                dataIn[0] = 1;
+                break;
+            case 2:
+                addition = realRespBack;
+                str = "Move";
+                realRespBackStr moveParsed = JsonUtility.FromJson<realRespBackStr>(result);
+                dataIn[0] = moveParsed.number_that_indicates_whether_the_move_was_legal;
+                dataIn[1] = moveParsed.number_of_squares_closed;
+                break;
+            case 3:
+                addition = aiRespBack;
+                str = "Ai move request";
+                aiRespBackStr aiMove = JsonUtility.FromJson<aiRespBackStr>(result);
+                dataIn[0] = aiMove.shape_num;
+                dataIn[1] = aiMove.permutation;
+                dataIn[2] = aiMove.x_position;
+                dataIn[3] = aiMove.y_position;
+                dataIn[4] = aiMove.number_of_squares_closed;
+                break;
+            case 4:
+                addition = empty;
+                str = "Skip turn";
+                break;
+            default:
+                addition = empty;
+                break;
         }
+        str = ("For " + str + ", got from server: " + "\n");
+        for (int i = 0; i < addition.Length; i++)
+        {
+            str += (addition[i] + ": " + dataIn[i] + "\n");
+        }
+        Debug.Log(str);
     }
 
-    private void printDataOut(string str = "Data")
+    private string constructDataOut(int code = 0)
     {
-        print(str + " sent to logic: ");
+        string[] addition = { };
+        string str = "Data";
+        string strOut = "";
+        switch (code)
+        {
+            case 0:
+                addition = namesFromUnity;
+                strOut = "start_new_game?";
+                str = "Names";
+                break;
+            case 1:
+                addition = firstFromUnity;
+                strOut = "first_move?gid=" + currentGameId + "&";
+                str = "First move";
+                break;
+            case 2:
+                addition = realFromUnity;
+                strOut = "reg_move?gid=" + currentGameId + "&";
+                str = "Move";
+                break;
+            case 3:
+                addition = aiFromUnity;
+                str = "Ai move request sent to server.";
+                Debug.Log(str);
+                return "ai_move?gid=" + currentGameId;
+            case 4:
+                addition = empty;
+                str = "Skip turn";
+                break;
+            default:
+                addition = empty;
+                break;
+        }
+        str = str + " sent to server: " + "\n";
         for (int i = 0; i < this.dataOut.Length; i++)
         {
-            Debug.Log(this.dataOut[i]);
+            str += (addition[i] + ": " + this.dataOut[i] + "\n");
+            strOut += addition[i] + "=" + this.dataOut[i] + "&";
         }
+        Debug.Log(str);
+        strOut = strOut.Remove(strOut.Length - 1);
+        return strOut;
     }
 
-    private void sendActionCode(int code, bool setupSock = true)
-    {
-        if (setupSock)
-        {
-            this.setupSocket();
-        }
-        //convert floats to bytes, send to port
-        var action_code = new int[1] { code };
-        var byteArray = new byte[action_code.Length * 4];
-        Buffer.BlockCopy(action_code, 0, byteArray, 0, byteArray.Length);
-        client.Send(byteArray);
-    }
-
-    private int[] receiveResponse()
-    {
-        //allocate and receive bytes
-        byte[] bytes = new byte[4000];
-        int idxUsedBytes = client.Receive(bytes);
-
-        //convert bytes to floats
-        int[] response = new int[idxUsedBytes / 4];
-        Buffer.BlockCopy(bytes, 0, response, 0, idxUsedBytes);
-        this.endSocket();
-        return response;
-    }
-
-    public int[] msgMoveToServer(int playerNum, int pieceNum, int permutation, int new_position_x, int new_position_y)
+    public async Task<int[]> msgNamesToServer()
     {
         try
         {
-            //Adding 1 to player num since here player nums are: 0-3, while in backend they are 1-4
-            this.dataOut = new int[5] { playerNum + 1, pieceNum, permutation, new_position_x, new_position_y };
-            this.dataIn = sendMoveMsg();
-            this.printDataIn();
-            return this.dataIn;
-        }
-        catch (Exception e)
-        {
-            Debug.Log("An exception occourd in sending move to server!\n The exception is:");
-            Debug.Log(e);
-            this.endSocket();
-            return new int[] { -1 };
-        }
-    }
-    private int[] sendMoveMsg()
-    {
-        //send the action code.
-        sendActionCode(2);
-        this.printDataOut("Move");
-
-        //setup the actual data and send it.
-        var byteArray = new byte[this.dataOut.Length * 4];
-        Buffer.BlockCopy(this.dataOut, 0, byteArray, 0, byteArray.Length);
-        client.Send(byteArray);
-
-        //get rsponse from logic.
-        return this.receiveResponse();
-    }
-
-    public int[] msgGameStartToServer(int shapeNum, int permutation)
-    {
-        try
-        {
-            this.dataOut = new int[2] { shapeNum, permutation };
-            this.dataIn = sendGameStartMsg();
-            this.printDataIn();
-            return this.dataIn;
-        }
-        catch (Exception e)
-        {
-            Debug.Log("An exception occourd in sending move to server!\n The exception is:");
-            Debug.Log(e);
-            this.endSocket();
-            return new int[] { -1 };
-        }
-    }
-    private int[] sendGameStartMsg()
-    {
-        //send the action code.
-        sendActionCode(1);
-        this.printDataOut("Game start");
-
-        //setup the actual data and send it.
-        var byteArray = new byte[this.dataOut.Length * 4];
-        Buffer.BlockCopy(this.dataOut, 0, byteArray, 0, byteArray.Length);
-        client.Send(byteArray);
-
-        //get rsponse from logic.
-        return this.receiveResponse();
-    }
-
-    public int msgNamesToServer()
-    {
-        try
-        {
-            this.dataIn = sendNamesMsg();
-            this.printDataIn();
-            return this.dataIn[0];
+            this.dataOut = new string[4];
+            foreach (var player in this.players)
+            {
+                string stringToInsert = player.playerName;
+                if (player.isAi)
+                {
+                    stringToInsert += "_AI_Player";
+                }
+                this.dataOut[player.playerNum - 1] = stringToInsert;
+            }
+            return await sendMessageByCode(namesCode);
         }
         catch (Exception e)
         {
             Debug.Log("An exception occourd in sending names to server!\n The exception is:");
             Debug.Log(e);
             this.OnApplicationQuit();
-            return -1;
+            return new int[1] { -1 };
         }
     }
 
-
-    private int[] sendNamesMsg()
-    {
-        sendActionCode(0, false);
-
-        string concatenatedNames = "";
-        foreach (var player in this.players)
-        {
-            string stringToInsert = player.playerName;
-            if (player.isAi)
-            {
-                stringToInsert += "_AI_Player";
-            }
-
-            if (player.playerNum != this.players.Length)
-            {
-                stringToInsert += ",";
-            }
-            concatenatedNames += stringToInsert;
-
-        }
-        print("Names sent to logic: " + concatenatedNames);
-        var byteArray = new byte[concatenatedNames.Length];
-        for (int i = 0; i < concatenatedNames.Length; i++)
-        {
-            byteArray[i] = Convert.ToByte(concatenatedNames[i]);
-        }
-        client.Send(byteArray);
-
-        return this.receiveResponse();
-    }
-
-    public int[] msgAiMoveRequestToServer(int playerNum)
+    public async Task<int[]> msgGameStartToServer(int shapeNum, int permutation)
     {
         try
         {
-            //Adding 1 to player num since here player nums are: 0-3, while in backend they are 1-4
-            this.dataOut = new int[1] { playerNum + 1 };
-            this.dataIn = sendAiMoveRequestMsg();
-            this.printDataIn();
-            return this.dataIn;
+            this.dataOut = new string[2] { shapeNum.ToString(), permutation.ToString() };
+            return await sendMessageByCode(firstMoveCode);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("An exception occourd in sending start game to server!\n The exception is:");
+            Debug.Log(e);
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> msgMoveToServer(int playerNum, int pieceNum, int permutation, int new_position_x, int new_position_y)
+    {
+        try
+        {
+            //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
+            this.dataOut = new string[5] { (playerNum + 1).ToString(), pieceNum.ToString(), permutation.ToString(), new_position_x.ToString(), new_position_y.ToString() };
+            return await sendMessageByCode(realMoveCode);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("An exception occourd in sending move to server!\n The exception is:");
+            Debug.Log(e);
+
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> msgAiMoveRequestToServer(int playerNum, bool cont)
+    {
+        try
+        {
+            //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
+            this.dataOut = new string[1] { (playerNum + 1).ToString() };
+            return await sendMessageByCode(aiMoveCode);
         }
         catch (Exception e)
         {
             Debug.Log("An exception occourd in sending ai move request to server!\n The exception is:");
             Debug.Log(e);
-            this.endSocket();
-            return new int[] { -1 };
+            return new int[1] { -1 };
         }
     }
 
 
-    private int[] sendAiMoveRequestMsg()
-    {
-        sendActionCode(3);
-        this.printDataOut("Ai move request");
-
-        var byteArray = new byte[this.dataOut.Length * 4];
-        Buffer.BlockCopy(this.dataOut, 0, byteArray, 0, byteArray.Length);
-        client.Send(byteArray);
-        return this.receiveResponse();
-    }
     #endregion
 
     /*string debugGameState()
