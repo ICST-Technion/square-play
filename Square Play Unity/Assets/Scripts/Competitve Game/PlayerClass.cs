@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class PlayerClass : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class PlayerClass : MonoBehaviour
     public string playerName = "";
 
     public bool isAi = true;
+
+    public GameObject playerNameTextObj;
     //The player class is actually atached to the players bank.
 
     // Start is called before the first frame update
@@ -23,5 +26,9 @@ public class PlayerClass : MonoBehaviour
     void Update()
     {
 
+    }
+
+    public void updateName(){
+        this.playerNameTextObj.GetComponent<TextMeshProUGUI>().text = this.playerName;
     }
 }

@@ -7,14 +7,13 @@ using UnityEngine.UI;
 using TMPro;
 using System.Threading.Tasks;
 
-public class competitveGameCanvasScript : MonoBehaviour
+public class startGameCanvasScript : MonoBehaviour
 {
     public CompetitiveGameManager manager;
     public GameObject gameCanvas;
     public GameObject preCanvas;
     public Button playGameButton;
     public Button pregameBackButton;
-    public List<GameObject> playerNamesText;
 
     public List<GameObject> namesInput;
 
@@ -46,20 +45,14 @@ public class competitveGameCanvasScript : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
-    private void updateNames()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            this.playerNamesText[i].GetComponent<TextMeshProUGUI>().text = manager.players[i].playerName + ":";
-        }
-    }
+    
 
     public async Task startGame()
     {
         if (choseNumAuto)
         {
             await manager.msgNamesToServer();
-            this.updateNames();
+            manager.updatePlayerNames();
             gameCanvas.SetActive(true);
             preCanvas.SetActive(false);
             await manager.startGame();

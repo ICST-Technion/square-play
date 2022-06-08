@@ -25,10 +25,6 @@ public class ShapesManager : MonoBehaviour
     public float start_shape_width = 0.5f;
     public float end_shape_width = 7;
 
-    public GameObject turnStatisticsPlayerName;
-
-    public GameObject turnStatisticsNumOfMoves;
-
     public CompetitiveGameManager gameManager;
     [HideInInspector]
     public Transform boardtrans;
@@ -188,12 +184,12 @@ public class ShapesManager : MonoBehaviour
     public async Task switchTurn()
     {
         print("For player number: " + this.currentPlayer + " there are, " +
-         this.numOfMovesForCurrentPlayer + " moves left");
+        this.numOfMovesForCurrentPlayer + " moves left");
         if (this.numOfMovesForCurrentPlayer == 0)
         {
             this.currentPlayer = (currentPlayer + 1) % 4;
             print("Switched to: " + this.currentPlayer);
-            this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text = this.gameManager.players[this.currentPlayer].playerName + "'s Turn:";
+            this.gameManager.updateCurrentPlayerName(this.currentPlayer);
 
             await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
 
@@ -207,8 +203,10 @@ public class ShapesManager : MonoBehaviour
 
             this.currentPlayerContinues = false;
 
-            this.turnStatisticsNumOfMoves.GetComponent<TextMeshProUGUI>().text = "Moves Left: " + this.numOfMovesForCurrentPlayer.ToString();
-
+            this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
+            if(this.isFirstTurn){
+                this.gameManager.resetTimeLeftForCurrentPlayer();
+            }
         }
         else
         {
@@ -224,11 +222,10 @@ public class ShapesManager : MonoBehaviour
 
                 await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
 
-                this.turnStatisticsNumOfMoves.GetComponent<TextMeshProUGUI>().text = "Moves Left: " + this.numOfMovesForCurrentPlayer.ToString();
-
+                this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
+                this.gameManager.resetTimeLeftForCurrentPlayer();
             }
         }
-
     }
     public async Task startGame()
     {
@@ -236,7 +233,7 @@ public class ShapesManager : MonoBehaviour
         this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = true;
         await this.switchTurn();
-
+        
     }
 
     private async Task endFirstMove()
