@@ -12,13 +12,9 @@ public class CompetitiveGameManager : MonoBehaviour
     public ShapesManager shapesManager;
     public GameObject notification;
     public gameCanvasScript gameCanvas;
-
-    [HideInInspector]
-    private NetworkManager netManager;
+    public NetworkManager netManager;
 
     public startGameCanvasScript startNewGameCanvas;
-
-    //public 
 
     public GameObject turnStatisticsPlayerName;
 
@@ -27,7 +23,7 @@ public class CompetitiveGameManager : MonoBehaviour
     public GameObject turnStatisticsTimeLeft;
 
     [HideInInspector]
-    public int scaleFactor = 33;
+    public float scaleFactor = 33;
     private int cols = 33;
     private int rows = 33;
 
@@ -45,14 +41,17 @@ public class CompetitiveGameManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-
+        var factor = GetScale(2560,1440);
+        this.scaleFactor = 33*factor;
+        print("scale: "+this.scaleFactor+" factor: "+factor);
+        var scaleVec= new Vector3(this.scaleFactor,this.scaleFactor);
+        this.gameCanvas.transform.localScale = scaleVec;
+        this.startNewGameCanvas.transform.localScale=scaleVec;
         board.generate(cols, rows, this); //give that board instance access to the python comm functions, via the socket interface
 
         shapesManager.Setup(this.board, this);
 
-        this.netManager=new NetworkManager();
-
-        this.setupTimer();
+        setupTimer();
     }
 
     void Update(){
@@ -72,7 +71,7 @@ public class CompetitiveGameManager : MonoBehaviour
     private void OnTimedEvent(object source, ElapsedEventArgs e){
         Console.WriteLine("The Elapsed event was raised at {0:HH:mm:ss.fff}",
                           e.SignalTime);
-        this.passTurn();
+        //this.passTurn();
         this.setupTimer();
     }
 
@@ -98,6 +97,14 @@ public class CompetitiveGameManager : MonoBehaviour
         }
     }
 
+private float GetScale(float width, float height)
+        {
+            var pt1 =Mathf.Pow(width/1920, 1f - 0.5f);
+            var pt2=Mathf.Pow(height/1080, 0.5f);
+            print(pt1);
+            print(pt2);
+            return pt1*pt2;
+        }
     private IEnumerator announceNotification(string notificationMsg)
     {
         print("the notification to be shown:" + notificationMsg);
@@ -138,6 +145,7 @@ public class CompetitiveGameManager : MonoBehaviour
     {
         this.showNotification(players[3].playerName + ", choose the piece you'd like to put in the middle of the board");
         await this.shapesManager.startGame();
+        //this.setupTimer();
     }
 
     #region python communcation

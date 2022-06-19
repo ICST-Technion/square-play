@@ -17,5 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/RulesScene.unity
     guid: cf6d2f35cd1d14b0f9ce4e8e1fac8ea8
+  - enabled: 1
+    path: Assets/Scenes/AssemblingScene.unity
+    guid: 183a28045849abf42ac44a5367c3e9cd
   m_configObjects:
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: a345afc9093a4e64f9a93a3586162258, type: 2}

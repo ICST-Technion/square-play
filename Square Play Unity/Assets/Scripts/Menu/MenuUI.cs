@@ -16,7 +16,8 @@ public class MenuUI : MonoBehaviour
     public void playOnlineMultiplayerCompetitveGame()
     {
         onlineMultiplayerCanvas.SetActive(true);
-        
+        mainCanvas.GetComponent<Canvas>().sortingLayerName="Default";
+        mainCanvas.GetComponent<Canvas>().sortingOrder = 1;
     }
     public void playShapesGame()
     {

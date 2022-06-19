@@ -18,7 +18,7 @@ public class ShapesManager : MonoBehaviour
     //[HideInInspector]
     public int numOfMovesForCurrentPlayer = 0;
 
-    public int gameScale = 33;
+    public float gameScale = 33;
 
     private bool currentPlayerContinues = false;
 
@@ -205,7 +205,7 @@ public class ShapesManager : MonoBehaviour
 
             this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
             if(this.isFirstTurn){
-                this.gameManager.resetTimeLeftForCurrentPlayer();
+               // this.gameManager.resetTimeLeftForCurrentPlayer();
             }
         }
         else
@@ -223,7 +223,7 @@ public class ShapesManager : MonoBehaviour
                 await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
 
                 this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
-                this.gameManager.resetTimeLeftForCurrentPlayer();
+                //this.gameManager.resetTimeLeftForCurrentPlayer();
             }
         }
     }

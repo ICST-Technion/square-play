@@ -71,6 +71,7 @@ public class NetworkManager : MonoBehaviour
 
         _client = new HttpClient(_clientHandler);*/
         _client = new HttpClient();
+        
     }
 
     // Update is called once per frame
@@ -91,10 +92,19 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     
     private async Task<int[]> sendMessageByCode(int code)
     {
-        var response = await _client.GetAsync(_server_http_addr + constructDataOut(code));
+        try{
+        var dataout = constructDataOut(code);
+        var response = await _client.GetAsync(_server_http_addr + dataout);
         string result = await response.Content.ReadAsStringAsync();
         parseReply(result, code);
         return _dataIn;
+    }catch (Exception e)
+        {
+            print("An exception occourd in sending names to server!\n The exception is:");
+            print(e);
+            //this.OnApplicationQuit();
+            return new int[1] { -1 };
+        }
     }
 
         private void parseReply(string result, int code = 0)//
@@ -217,8 +227,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending names to server!\n The exception is:");
-            Debug.Log(e);
+            print("An exception occourd in sending names to server!\n The exception is:");
+            print(e);
             //this.OnApplicationQuit();
             return new int[1] { -1 };
         }
@@ -233,8 +243,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending start game to server!\n The exception is:");
-            Debug.Log(e);
+            print("An exception occourd in sending start game to server!\n The exception is:");
+            print(e);
             return new int[1] { -1 };
         }
     }
@@ -249,8 +259,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending move to server!\n The exception is:");
-            Debug.Log(e);
+            print("An exception occourd in sending move to server!\n The exception is:");
+            print(e);
 
             return new int[1] { -1 };
         }
@@ -266,8 +276,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending ai move request to server!\n The exception is:");
-            Debug.Log(e);
+           print("An exception occourd in sending ai move request to server!\n The exception is:");
+            print(e);
             return new int[1] { -1 };
         }
     }
@@ -282,8 +292,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-            Debug.Log("An exception occourd in sending ai move request to server!\n The exception is:");
-            Debug.Log(e);
+            print("An exception occourd in sending ai move request to server!\n The exception is:");
+            print(e);
             return new int[1] { -1 };
         }
     }
