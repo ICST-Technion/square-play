@@ -11,23 +11,29 @@ public class joinGameCanvasScript : MonoBehaviour
 {
     public CompetitiveGameManager manager;
     public GameObject gameCanvas;
-    public GameObject preCanvas;
+    public GameObject joinCanvas;
     public Button playGameButton;
     public Button pregameBackButton;
-
-    public GameObject gameIdInput;
-
-    private bool enteredGid = false;
-
+    private string enteringPlayersName;
+    private string joiningGameId;
+    static bool wantsToCreateGame;
     public GameObject notification;
 
     // Start is called before the first frame update
     void Start()
     {
         gameCanvas.SetActive(false);
-        preCanvas.SetActive(true);
+        joinCanvas.SetActive(true);
 
-        playGameButton.onClick.AddListener(async () => await startGame());
+        if (wantsToCreateGame)
+        {
+            playGameButton.onClick.AddListener(async () => await startNewGame());
+        }
+        else
+        {
+            playGameButton.onClick.AddListener(async () => await joinGame());
+        }
+        
         pregameBackButton.onClick.AddListener(async () => await goBack());
     }
 
@@ -43,15 +49,40 @@ public class joinGameCanvasScript : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
-    
-
-    public async Task startGame()
+    public void gameId(string game_id)
     {
-        if (enteredGid)
+        this.joiningGameId = game_id;
+    }
+
+
+    public void playersName(string name)
+    {
+       this.enteringPlayersName = name;
+    }
+
+
+    public async Task startNewGame()
+    {
+        if (enteringPlayersName!="")
         {
-            //TODO: call a function from MANAGER that will tell the server that a new player connected to the specified game, and will get in return the players number.
+            await manager.msgNewMultiplayerGameToServer(enteringPlayersName);
             gameCanvas.SetActive(true);
-            preCanvas.SetActive(false);
+            joinCanvas.SetActive(false);
+            //TODO: call a function from MANAGER that will display only the players that are currently in the game, and if the player that just joined is the last - start the game.
+        }
+        else
+        {
+            showNotification("You must insert the game ID in order to play!");
+        }
+    }
+
+    public async Task joinGame()
+    {
+        if (enteringPlayersName != ""&&joiningGameId!="")
+        {
+            await manager.msgJoinMultiplayerGameToServer(joiningGameId,enteringPlayersName);
+            gameCanvas.SetActive(true);
+            joinCanvas.SetActive(false);
             //TODO: call a function from MANAGER that will display only the players that are currently in the game, and if the player that just joined is the last - start the game.
         }
         else

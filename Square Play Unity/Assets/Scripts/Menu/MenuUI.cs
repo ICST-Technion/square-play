@@ -5,9 +5,14 @@ using UnityEngine.SceneManagement;
 
 public class MenuUI : MonoBehaviour
 {
+    static bool wantsOnlineGame =false;
     public GameObject onlineMultiplayerCanvas;
 
     public GameObject mainCanvas;
+     
+     void Update()
+     {
+     }
 
     public void playLocalCompetitveGame()
     {
@@ -15,9 +20,8 @@ public class MenuUI : MonoBehaviour
     }
     public void playOnlineMultiplayerCompetitveGame()
     {
+        wantsOnlineGame=true;
         onlineMultiplayerCanvas.SetActive(true);
-        mainCanvas.GetComponent<Canvas>().sortingLayerName="Default";
-        mainCanvas.GetComponent<Canvas>().sortingOrder = 1;
     }
     public void playShapesGame()
     {

@@ -20,6 +20,8 @@ public class ShapesManager : MonoBehaviour
 
     public float gameScale = 33;
 
+    static bool wantsOnlineGame;
+
     private bool currentPlayerContinues = false;
 
     public float start_shape_width = 0.5f;
@@ -191,13 +193,13 @@ public class ShapesManager : MonoBehaviour
             print("Switched to: " + this.currentPlayer);
             this.gameManager.updateCurrentPlayerName(this.currentPlayer);
 
-            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
+            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0&& gameManager.players[0].isItMe);
 
-            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
+            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1&& gameManager.players[1].isItMe);
 
-            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
+            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2&& gameManager.players[2].isItMe);
 
-            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
+            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3&& gameManager.players[3].isItMe);
 
             this.numOfMovesForCurrentPlayer = 1;
 
@@ -214,13 +216,13 @@ public class ShapesManager : MonoBehaviour
             this.currentPlayerContinues = true;
             if (!this.isHeHuman())
             {
-                await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
+                await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0 && gameManager.players[0].isItMe);
 
-                await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
+                await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1 && gameManager.players[1].isItMe);
 
-                await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
+                await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2 && gameManager.players[2].isItMe);
 
-                await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
+                await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3 && gameManager.players[3].isItMe);
 
                 this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
                 //this.gameManager.resetTimeLeftForCurrentPlayer();

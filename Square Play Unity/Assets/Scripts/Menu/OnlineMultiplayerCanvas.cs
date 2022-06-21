@@ -1,18 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class MenuCursor : MonoBehaviour
+public class OnlineMultiplayerCanvas : MonoBehaviour
 {
-    public Texture2D cursorTexture;
-
+    static bool wantsToCreateGame = true;
+    // Start is called before the first frame update
     void Start()
     {
-        Cursor.SetCursor(cursorTexture, Vector2.zero, CursorMode.Auto);
+        
     }
-    void Update()
+
+    // Update is called once per frame
+     
+   void Update()
      {
-       detectWhosTarget();
+       //detectWhosTarget();
      }
 
      void detectWhosTarget(){
@@ -49,4 +53,12 @@ public class MenuCursor : MonoBehaviour
              }
          }
      }
+    public void createOnlineGame(){
+        SceneManager.LoadScene(1);
+    }
+
+    public void joinOnlineGame(){
+        //wantsToCreateGame = false;
+        SceneManager.LoadScene(1);
+    }
 }

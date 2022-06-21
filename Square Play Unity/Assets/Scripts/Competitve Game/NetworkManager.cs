@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Net.Http;
+using System.Net;
 using System.Threading.Tasks;
 //using System.Net.Http.WebRequest;
 
@@ -10,24 +11,33 @@ public class NetworkManager : MonoBehaviour
 {
         #region Network helpers
     private string[] empty = { "", "", "", "", "", "", "" };
-    private int namesCode = 0;
+    private const int namesCode = 0;
     private string[] namesFromUnity = { "p1", "p2", "p3", "p4" };
     private string[] namesRespBack = { "game_id" };
-    private int firstMoveCode = 1;
+    private const int firstMoveCode = 1;
     private string[] firstFromUnity = { "piece", "perm" };
     private string[] firstRespBack = { "d" };
-    private int realMoveCode = 2;
+    private const int realMoveCode = 2;
     private string[] realFromUnity = { "p_num", "piece", "perm", "x_coor", "y_coor" };
     private string[] realRespBack = { "number that indicates whether the move was legal", "number of squares closed" };
-    private int aiMoveCode = 3;
+    private const int aiMoveCode = 3;
     private string[] aiFromUnity = { "p_num" };
     private string[] aiRespBack = { "shape num", "permutation", "x position", "y position", "number of squares closed" };
-    private int passTurnCode = 4;
+    private const int passTurnCode = 4;
+    private const int newGameCode = 5;
+    private string[] newGameFromUnity = { "p_name" };
+    private string[] newGameRespBack = { "game_id", "p_num" };
+    private const int joinGameCode = 6;
+    private string[] joinGameFromUnity = { "game_id","p_name" };
+    private string[] joinGameRespBack = { "p_num" };
 
     private struct namesRespBackStr { public string game_id; }
     private struct firstRespBackStr { public string some; }
     private struct realRespBackStr { public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
     private struct aiRespBackStr { public int shape_num; public int permutation; public int x_position; public int y_position; public int number_of_squares_closed; };
+    private struct newGameRespBackStr { public string game_id; public string player_num; }
+    private struct joinGameRespBackStr { public string player_num; }
+
     [SerializeField]
     private string[] _dataOut;
     private int[] _dataIn;
@@ -40,6 +50,7 @@ public class NetworkManager : MonoBehaviour
     private string _server_http_addr = "";
     private string _currentGameId = "";
     private HttpClient _client;
+    private HttpListener _listener;
     //private WebRequestHandler _clientHandler;
 
     /*
@@ -71,7 +82,9 @@ public class NetworkManager : MonoBehaviour
 
         _client = new HttpClient(_clientHandler);*/
         _client = new HttpClient();
-        
+        _listener = new HttpListener();
+        _listener.Prefixes.Add(_server_http_addr);
+        _listener.Start();
     }
 
     // Update is called once per frame
@@ -80,7 +93,7 @@ public class NetworkManager : MonoBehaviour
         
     }
 
-        /*
+    /*
 for a real player move: 
 From Unity: [player num,shape num, permutation,x position, y position]
 Response from Backend: [ number that indicates whether the move was legal , number of squares closed]
@@ -89,7 +102,7 @@ for ai player move:
 From Unity: [player num]
 Response from Backend: [ shape num,permutation,x position, y position, number of squares closed]
 */
-    
+    #region Generic network functions
     private async Task<int[]> sendMessageByCode(int code)
     {
         try{
@@ -114,27 +127,27 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         _dataIn = new int[5];
         switch (code)
         {
-            case 0:
+            case namesCode:
                 addition = namesRespBack;
                 str = "Names";
                 namesRespBackStr nameParesd = JsonUtility.FromJson<namesRespBackStr>(result);
                 _dataIn[0] = int.Parse(nameParesd.game_id.Substring(0, 3));
                 this._currentGameId = nameParesd.game_id;
                 break;
-            case 1:
+            case firstMoveCode:
                 addition = firstRespBack;
                 str = "First Move";
                 firstRespBackStr firstParsed = JsonUtility.FromJson<firstRespBackStr>(result);
                 _dataIn[0] = 1;
                 break;
-            case 2:
+            case realMoveCode:
                 addition = realRespBack;
                 str = "Move";
                 realRespBackStr moveParsed = JsonUtility.FromJson<realRespBackStr>(result);
                 _dataIn[0] = moveParsed.number_that_indicates_whether_the_move_was_legal;
                 _dataIn[1] = moveParsed.number_of_squares_closed;
                 break;
-            case 3:
+            case aiMoveCode:
                 addition = aiRespBack;
                 str = "Ai move request";
                 aiRespBackStr aiMove = JsonUtility.FromJson<aiRespBackStr>(result);
@@ -144,10 +157,25 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 _dataIn[3] = aiMove.y_position;
                 _dataIn[4] = aiMove.number_of_squares_closed;
                 break;
-            case 4:
+            case passTurnCode:
                 addition = empty;
                 str = "Skip turn";
                 break;
+            case newGameCode:
+                addition = newGameRespBack;
+                str = "New game created";
+                newGameRespBackStr newGameParesd = JsonUtility.FromJson<newGameRespBackStr>(result);
+                _dataIn[0] = int.Parse(newGameParesd.game_id.Substring(0, 3));
+                _dataIn[1] = int.Parse(newGameParesd.player_num.Substring(0, 3));
+                this._currentGameId = newGameParesd.game_id;
+                break;
+            case joinGameCode:
+                addition = joinGameRespBack;
+                str = "Joined game!";
+                joinGameRespBackStr joinGameParsed = JsonUtility.FromJson<joinGameRespBackStr>(result);
+                _dataIn[0] = int.Parse(joinGameParsed.player_num.Substring(0, 3));
+                break;
+
             default:
                 addition = empty;
                 break;
@@ -167,31 +195,41 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         string strOut = "";
         switch (code)
         {
-            case 0:
+            case namesCode:
                 addition = namesFromUnity;
                 strOut = "start_new_game?";
                 str = "Names";
                 break;
-            case 1:
+            case firstMoveCode:
                 addition = firstFromUnity;
                 strOut = "first_move?gid=" + _currentGameId + "&";
                 str = "First move";
                 break;
-            case 2:
+            case realMoveCode:
                 addition = realFromUnity;
                 strOut = "reg_move?gid=" + _currentGameId + "&";
                 str = "Move";
                 break;
-            case 3:
+            case aiMoveCode:
                 addition = aiFromUnity;
                 str = "Ai move request sent to server.";
                 Debug.Log(str);
                 return "ai_move?gid=" + _currentGameId;
-            case 4:
+            case passTurnCode:
                 addition = empty;
                 str = "Skip turn";
                 Debug.Log(str);
-                return "pass_turn?gid="+ _currentGameId+"&p_num"+this._dataOut[0];
+                return "pass_turn?gid="+ _currentGameId+"&p_num="+this._dataOut[0];
+            case newGameCode:
+                addition = newGameFromUnity;
+                str = "New Game!";
+                Debug.Log(str);
+                return "new_game?p_num=" + this._dataOut[0];
+            case joinGameCode:
+                addition = joinGameFromUnity;
+                str = "New Game!";
+                Debug.Log(str);
+                return "join_game?gid=" + this._dataOut[0] +"&p_num =" + this._dataOut[1];
             default:
                 addition = empty;
                 break;
@@ -199,15 +237,54 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         str = str + " sent to server: " + "\n";
         for (int i = 0; i < this._dataOut.Length; i++)
         {
-            str += (addition[i] + ": " + this._dataOut[i] + "\n");
+            str += addition[i] + ": " + this._dataOut[i] + "\n";
             strOut += addition[i] + "=" + this._dataOut[i] + "&";
         }
         Debug.Log(str);
         strOut = strOut.Remove(strOut.Length - 1);
         return strOut;
     }
+    #endregion
 
+    #region Network interface
     
+    #region Multiplayer functions
+    public async Task<int[]> msgNewMultiplayerGameToServer(string player_name)
+    {
+        try
+        {
+            this._dataOut = new string[1] { player_name };
+            int[] result = await sendMessageByCode(newGameCode);
+            this._currentGameId = result[0].ToString();
+            return result;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending creat new multiplayer game to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> msgJoinMultiplayerGameToServer(string game_id, string player_name)
+    {
+        try
+        {
+            this._dataOut = new string[2] { game_id,player_name };
+            int[] result = await sendMessageByCode(newGameCode);
+            this._currentGameId = game_id;
+            return result;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending join multiplayer game to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+    #endregion
+
+    #region Competitve game functions (for both singleplayer and multiplayer)
     public async Task<int[]> msgNamesToServer(PlayerClass[] playersClassesList)
     {
         this.players = playersClassesList;
@@ -297,9 +374,11 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
             return new int[1] { -1 };
         }
     }
-
+    #endregion
     public async Task byeBye()
     {
         await _client.GetAsync(_server_http_addr + "end_game?gid=" + _currentGameId);
     }
+
+    #endregion 
 }

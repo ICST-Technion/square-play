@@ -36,7 +36,7 @@ public class startGameCanvasScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        
     }
 
     public async Task goBack()
@@ -44,6 +44,8 @@ public class startGameCanvasScript : MonoBehaviour
         await manager.byeBye();
         SceneManager.LoadScene(0);
     }
+
+    
 
     
 
