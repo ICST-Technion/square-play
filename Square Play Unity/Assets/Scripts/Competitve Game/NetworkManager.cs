@@ -1,15 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using System;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using UnityEngine;
 //using System.Net.Http.WebRequest;
 
 public class NetworkManager : MonoBehaviour
 {
-        #region Network helpers
+    #region Network helpers
     private string[] empty = { "", "", "", "", "", "", "" };
     private const int namesCode = 0;
     private string[] namesFromUnity = { "p1", "p2", "p3", "p4" };
@@ -28,9 +26,11 @@ public class NetworkManager : MonoBehaviour
     private string[] newGameFromUnity = { "p_name" };
     private string[] newGameRespBack = { "game_id", "p_num" };
     private const int joinGameCode = 6;
-    private string[] joinGameFromUnity = { "game_id","p_name" };
+    private string[] joinGameFromUnity = { "game_id", "p_name" };
     private string[] joinGameRespBack = { "p_num" };
-
+    private const int leaveGame = 7;
+    static bool wantsToCreateGame;
+    static bool wantsOnlineGame;
     private struct namesRespBackStr { public string game_id; }
     private struct firstRespBackStr { public string some; }
     private struct realRespBackStr { public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
@@ -44,7 +44,7 @@ public class NetworkManager : MonoBehaviour
     private PlayerClass[] players;
 
     #endregion
-   
+
     private string _url = "http://132.69.8.19";
     private string _port = "80";
     private string _server_http_addr = "";
@@ -64,7 +64,7 @@ public class NetworkManager : MonoBehaviour
     */
     // Start is called before the first frame update
     void Start()
-    {   
+    {
         /*X509Store store;
         try{
             store =new X509Store(StoreName.My, StoreLocation.CurrentUser);
@@ -75,7 +75,7 @@ public class NetworkManager : MonoBehaviour
 
         _server_http_addr = this._url + ":" + this._port + "/";
 
-        
+
 
         /*_clientHandler = new WebRequestHandler();
         _clientHandler.ClientCertificates.Add(cert);
@@ -90,7 +90,7 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     /*
@@ -105,13 +105,15 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     #region Generic network functions
     private async Task<int[]> sendMessageByCode(int code)
     {
-        try{
-        var dataout = constructDataOut(code);
-        var response = await _client.GetAsync(_server_http_addr + dataout);
-        string result = await response.Content.ReadAsStringAsync();
-        parseReply(result, code);
-        return _dataIn;
-    }catch (Exception e)
+        try
+        {
+            var dataout = constructDataOut(code);
+            var response = await _client.GetAsync(_server_http_addr + dataout);
+            string result = await response.Content.ReadAsStringAsync();
+            parseReply(result, code);
+            return _dataIn;
+        }
+        catch (Exception e)
         {
             print("An exception occourd in sending names to server!\n The exception is:");
             print(e);
@@ -120,7 +122,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
     }
 
-        private void parseReply(string result, int code = 0)//
+    private void parseReply(string result, int code = 0)//
     {
         string[] addition = { };
         string str = "Data";
@@ -202,12 +204,26 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 break;
             case firstMoveCode:
                 addition = firstFromUnity;
-                strOut = "first_move?gid=" + _currentGameId + "&";
+                if (wantsOnlineGame)
+                {
+                    strOut = "first_move_multi?gid=" + _currentGameId + "&";
+                }
+                else
+                {
+                    strOut = "first_move?gid=" + _currentGameId + "&";
+                }
                 str = "First move";
                 break;
             case realMoveCode:
                 addition = realFromUnity;
-                strOut = "reg_move?gid=" + _currentGameId + "&";
+                if (wantsOnlineGame)
+                {
+                    strOut = "reg_move_multi?gid=" + _currentGameId + "&";
+                }
+                else
+                {
+                    strOut = "reg_move?gid=" + _currentGameId + "&";
+                }
                 str = "Move";
                 break;
             case aiMoveCode:
@@ -219,17 +235,26 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 addition = empty;
                 str = "Skip turn";
                 Debug.Log(str);
-                return "pass_turn?gid="+ _currentGameId+"&p_num="+this._dataOut[0];
+                if (wantsOnlineGame)
+                {
+                    return "pass_turn_multi?gid=" + _currentGameId + "&p_num=" + this._dataOut[0];
+                }
+                else
+                {
+                    return "pass_turn?gid=" + _currentGameId + "&p_num=" + this._dataOut[0];
+                }
             case newGameCode:
                 addition = newGameFromUnity;
                 str = "New Game!";
                 Debug.Log(str);
-                return "new_game?p_num=" + this._dataOut[0];
+                return "create_waiting_room?rn=1&p1=Admin_player";//+ this._dataOut[0];
             case joinGameCode:
                 addition = joinGameFromUnity;
-                str = "New Game!";
+                str = "Join Game";
                 Debug.Log(str);
-                return "join_game?gid=" + this._dataOut[0] +"&p_num =" + this._dataOut[1];
+                return "join_waiting_room?gid=" + this._dataOut[0] + "&p_num =" + this._dataOut[1];
+            case leaveGame:
+
             default:
                 addition = empty;
                 break;
@@ -247,7 +272,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     #endregion
 
     #region Network interface
-    
+
     #region Multiplayer functions
     public async Task<int[]> msgNewMultiplayerGameToServer(string player_name)
     {
@@ -270,8 +295,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     {
         try
         {
-            this._dataOut = new string[2] { game_id,player_name };
-            int[] result = await sendMessageByCode(newGameCode);
+            this._dataOut = new string[2] { game_id, player_name };
+            int[] result = await sendMessageByCode(joinGameCode);
             this._currentGameId = game_id;
             return result;
         }
@@ -353,7 +378,7 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
         catch (Exception e)
         {
-           print("An exception occourd in sending ai move request to server!\n The exception is:");
+            print("An exception occourd in sending ai move request to server!\n The exception is:");
             print(e);
             return new int[1] { -1 };
         }
@@ -377,8 +402,43 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
     #endregion
     public async Task byeBye()
     {
-        await _client.GetAsync(_server_http_addr + "end_game?gid=" + _currentGameId);
+        if (wantsOnlineGame)
+        {
+            try
+            {
+                //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
+                this._dataOut = new string[1] { this._currentGameId };
+                await sendMessageByCode(leaveGame);
+            }
+            catch (Exception e)
+            {
+                print("An exception occourd in sending end game request to server!\n The exception is:");
+                print(e);
+            }
+        }
+        else {
+            await _client.GetAsync(_server_http_addr + "end_game?gid=" + _currentGameId);
+        }
+    }
+    #region Server Listener
+    private void serverListener()
+    {
+        _listener.BeginGetContext(new AsyncCallback(listenerCallback), _listener);
     }
 
-    #endregion 
+    private void listenerCallback(IAsyncResult result)
+    {
+        if (_listener.IsListening)
+        {
+            var context = _listener.EndGetContext(result);
+            var request = context.Request;
+
+            Console.WriteLine($"{request}");
+            Console.WriteLine($"{request.Url}");
+
+            serverListener();
+        }
+    }
+    #endregion
+    #endregion
 }

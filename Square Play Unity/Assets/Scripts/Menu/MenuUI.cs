@@ -1,18 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class MenuUI : MonoBehaviour
 {
-    static bool wantsOnlineGame =false;
+    static bool wantsOnlineGame = false;
     public GameObject onlineMultiplayerCanvas;
 
     public GameObject mainCanvas;
-     
-     void Update()
-     {
-     }
+
+    void Update()
+    {
+    }
 
     public void playLocalCompetitveGame()
     {
@@ -20,7 +18,7 @@ public class MenuUI : MonoBehaviour
     }
     public void playOnlineMultiplayerCompetitveGame()
     {
-        wantsOnlineGame=true;
+        wantsOnlineGame = true;
         onlineMultiplayerCanvas.SetActive(true);
     }
     public void playShapesGame()

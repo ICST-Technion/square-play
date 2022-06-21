@@ -1,10 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
-using System;
 using System.Threading.Tasks;
 using System.Timers;
+using TMPro;
+using UnityEngine;
 
 public class CompetitiveGameManager : MonoBehaviour
 {
@@ -208,7 +208,7 @@ public class CompetitiveGameManager : MonoBehaviour
 
     public async Task<int[]> msgJoinMultiplayerGameToServer(string game_id, string player_name)
     {
-        int[] result= await this.netManager.msgJoinMultiplayerGameToServer(game_id, player_name);
+        int[] result = await this.netManager.msgJoinMultiplayerGameToServer(game_id, player_name);
         this._currentGameId = game_id;
         int player_num = result[1];
         this.players[player_num - 1].thisIsMe(player_name);

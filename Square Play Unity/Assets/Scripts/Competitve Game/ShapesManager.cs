@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class ShapesManager : MonoBehaviour
 {
@@ -193,21 +192,22 @@ public class ShapesManager : MonoBehaviour
             print("Switched to: " + this.currentPlayer);
             this.gameManager.updateCurrentPlayerName(this.currentPlayer);
 
-            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0&& gameManager.players[0].isItMe);
+            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0 && gameManager.players[0].isItMe);
 
-            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1&& gameManager.players[1].isItMe);
+            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1 && gameManager.players[1].isItMe);
 
-            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2&& gameManager.players[2].isItMe);
+            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2 && gameManager.players[2].isItMe);
 
-            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3&& gameManager.players[3].isItMe);
+            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3 && gameManager.players[3].isItMe);
 
             this.numOfMovesForCurrentPlayer = 1;
 
             this.currentPlayerContinues = false;
 
             this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
-            if(this.isFirstTurn){
-               // this.gameManager.resetTimeLeftForCurrentPlayer();
+            if (this.isFirstTurn)
+            {
+                // this.gameManager.resetTimeLeftForCurrentPlayer();
             }
         }
         else
@@ -235,7 +235,7 @@ public class ShapesManager : MonoBehaviour
         this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = true;
         await this.switchTurn();
-        
+
     }
 
     private async Task endFirstMove()

@@ -1,10 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
-using System.Threading.Tasks;
 public class gameCanvasScript : MonoBehaviour
 {
     public Button competitveAgainButton;

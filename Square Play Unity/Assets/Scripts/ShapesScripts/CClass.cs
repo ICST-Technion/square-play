@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CClass : BaseShape
 {
@@ -18,5 +15,5 @@ public class CClass : BaseShape
         this.shapeManager = newPieceManager;
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
     }
-    
+
 }

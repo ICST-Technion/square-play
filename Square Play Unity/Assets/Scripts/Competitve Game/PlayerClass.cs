@@ -1,7 +1,6 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class PlayerClass : MonoBehaviour
 {
@@ -30,11 +29,13 @@ public class PlayerClass : MonoBehaviour
 
     }
 
-    public void updateName() {
+    public void updateName()
+    {
         this.playerNameTextObj.GetComponent<TextMeshProUGUI>().text = this.playerName;
     }
 
-    public void thisIsMe(string my_name){
+    public void thisIsMe(string my_name)
+    {
         this.playerName = my_name;
         updateName();
         this.isItMe = true;
@@ -45,7 +46,7 @@ public class PlayerClass : MonoBehaviour
         foreach (var piece in this.playerShapes)
         {
             piece.gameObject.SetActive(false);
-        } 
+        }
     }
 
     public void turnMeOn()

@@ -1,11 +1,9 @@
 using System.Collections;
-using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
-using System.Threading.Tasks;
 
 public class joinGameCanvasScript : MonoBehaviour
 {
@@ -33,7 +31,7 @@ public class joinGameCanvasScript : MonoBehaviour
         {
             playGameButton.onClick.AddListener(async () => await joinGame());
         }
-        
+
         pregameBackButton.onClick.AddListener(async () => await goBack());
     }
 
@@ -57,13 +55,13 @@ public class joinGameCanvasScript : MonoBehaviour
 
     public void playersName(string name)
     {
-       this.enteringPlayersName = name;
+        this.enteringPlayersName = name;
     }
 
 
     public async Task startNewGame()
     {
-        if (enteringPlayersName!="")
+        if (enteringPlayersName != "")
         {
             await manager.msgNewMultiplayerGameToServer(enteringPlayersName);
             gameCanvas.SetActive(true);
@@ -78,9 +76,9 @@ public class joinGameCanvasScript : MonoBehaviour
 
     public async Task joinGame()
     {
-        if (enteringPlayersName != ""&&joiningGameId!="")
+        if (enteringPlayersName != "" && joiningGameId != "")
         {
-            await manager.msgJoinMultiplayerGameToServer(joiningGameId,enteringPlayersName);
+            await manager.msgJoinMultiplayerGameToServer(joiningGameId, enteringPlayersName);
             gameCanvas.SetActive(true);
             joinCanvas.SetActive(false);
             //TODO: call a function from MANAGER that will display only the players that are currently in the game, and if the player that just joined is the last - start the game.
@@ -103,6 +101,6 @@ public class joinGameCanvasScript : MonoBehaviour
     public void showNotification(string msg)
     {
         StartCoroutine(this.announceNotification(msg));
-    }    
+    }
 }
 

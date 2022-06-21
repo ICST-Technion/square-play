@@ -1,11 +1,10 @@
 using System.Collections;
-using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
-using System.Threading.Tasks;
 
 public class startGameCanvasScript : MonoBehaviour
 {
@@ -36,7 +35,7 @@ public class startGameCanvasScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public async Task goBack()
@@ -45,9 +44,9 @@ public class startGameCanvasScript : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
-    
 
-    
+
+
 
     public async Task startGame()
     {
