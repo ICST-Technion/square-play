@@ -1,6 +1,6 @@
 from pieces import Piece
 import logging
-from tkinter import *
+#from tkinter import *
 
 """
 The Board is just a list of a lines (one unit long), where a line is a set of two coordinates.
@@ -236,7 +236,7 @@ class Board:
             return new_sq
         return self.inner_squares_counter(possible_squares, self.line_list, self.last_piece)
 
-    def print_board(self):
+    '''def print_board(self):
         root = Tk()
         root.title('Square Play Board')
         root.geometry("500x500")
@@ -250,4 +250,4 @@ class Board:
             point2 = next(iterator, None)
             board.create_line(point1[0] * 30, board.winfo_reqheight() - point1[1] * 30, point2[0] * 30, board.winfo_reqheight() - point2[1] * 30, fill=color, width=5)
 
-        root.mainloop()
+        root.mainloop()'''
