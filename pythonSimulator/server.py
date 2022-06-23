@@ -58,98 +58,107 @@ async def create_new_room(rn: str, p1: str):
     room_admin = p1
     room_name = rn
     if room_name in game_rooms:
-        return {"ERR_NUM": '-2', "Desc": 'Game room with that name already exists'}
+        return {"Result": '-2', "Desc": 'Game room with that name already exists'}
 
     room_id = hash(datetime.datetime.now().isoformat() + str(room_admin))
     game_rooms[room_name] = GameRoom(room_name, room_id, room_admin)
-    return {'state': '1', "room_id": str(room_id), 'room_name': str(room_name)}
+    return {'Result': to_send, 'Desc':'OK','state': '1', "room_id": str(room_id), 'room_name': str(room_name)}
 
 
 @app.get('/query_waiting_room')
 async def query_waiting_room(rn: str):
+    #fix like the rest later
+    to_send=""
     if rn not in game_rooms:
-        return {'state': '-1', 'game_id': '-1'}
+        to_send= {'state': '-1', 'game_id': '-1'}
     else:
-        return {'state': str(game_rooms[rn].state), 'game_id': str(game_rooms[rn].game_id)}
+        to_send= {'state': str(game_rooms[rn].state), 'game_id': str(game_rooms[rn].game_id)}
+    to_send=str(to_send)
+    return {'Result': to_send, 'Desc':'OK'}
 
 
 @app.get('/query_all_rooms')
 async def query_all_rooms():
     games = str(game_rooms.keys())
-    return {'Game list': games}
+    return {'Result': '[0]', 'Desc':'OK','Game list': games}
+
 
 
 @app.get('/join_waiting_room')
 async def join_waiting_room(rn: str, pn: str):
     if rn not in game_rooms:
-        return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+        return {"Result": '-1', "Desc": 'Game room does not exist'}
     if pn in game_rooms[rn].players:
-        return {"ERR_NUM": '-3', "Desc": 'Game room already has a player with that name'}
+        return {"Result": '-3', "Desc": 'Game room already has a player with that name'}
     if game_rooms[rn].state > 1:
-        return {"ERR_NUM": '-4', "Desc": 'Game has already begun'}
+        return {"Result": '-4', "Desc": 'Game has already begun'}
     if len(game_rooms[rn].players) >= 4:
-        return {"ERR_NUM": '-6', "Desc": 'Room has too many players'}
+        return {"Result": '-6', "Desc": 'Room has too many players'}
 
     game_rooms[rn].players.append(pn)
     code = hash(datetime.datetime.now().isoformat() + str(pn))
     game_rooms[rn].player_codes[pn] = code
-    return {'state': str(game_rooms[rn].state), 'player_code': code}
+    return {'Result': '[0]', 'Desc':'OK','state': str(game_rooms[rn].state), 'player_code': code}
 
 
 @app.get('/remove_from_room')
 async def remove_from_room(rn: str, r_id: int, pn: str):
     if rn not in game_rooms:
-        return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+        return {"Result": '-1', "Desc": 'Game room does not exist'}
     if pn not in game_rooms[rn].players:
-        return {"ERR_NUM": '-3', "Desc": 'Game room  does not have a player with that name'}
+        return {"Result": '-3', "Desc": 'Game room  does not have a player with that name'}
     if game_rooms[rn].state > 1:
-        return {"ERR_NUM": '-4', "Desc": 'Game has already begun'}
+        return {"Result": '-4', "Desc": 'Game has already begun'}
     if pn == game_rooms[rn].admin:
-        return {"ERR_NUM": '-5', "Desc": 'Cannot remove admin from room'}
+        return {"Result": '-5', "Desc": 'Cannot remove admin from room'}
     if r_id != game_rooms[rn].id:
-        return {"ERR_NUM": '-6', "Desc": 'Only admin can remove from room'}
+        return {"Result": '-6', "Desc": 'Only admin can remove from room'}
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
-    return {'state': '1'}
+    return {'Result':'[0]', 'Desc':'OK',"state":1}
+
 
 
 @app.get('/leave_room')
 async def leave_room(rn: str, pn: str, pc: int):
     if rn not in game_rooms:
-        return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+        return {"Result": '-1', "Desc": 'Game room does not exist'}
     if pn not in game_rooms[rn].players:
-        return {"ERR_NUM": '-3', "Desc": 'Game room  does not have a player with that name'}
+        return {"Result": '-3', "Desc": 'Game room  does not have a player with that name'}
     if game_rooms[rn].state > 1:
-        return {"ERR_NUM": '-4', "Desc": 'Game has already begun'}
+        return {"Result": '-4', "Desc": 'Game has already begun'}
     if pn == game_rooms[rn].admin:
-        return {"ERR_NUM": '-5', "Desc": 'Admin cannot leave room from room'}
+        return {"Result": '-5', "Desc": 'Admin cannot leave room from room'}
     if pc != game_rooms[rn].player_codes[pn]:
-        return {"ERR_NUM": '-6', "Desc": 'Only the player himself can leave room'}
+        return {"Result": '-6', "Desc": 'Only the player himself can leave room'}
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
-    return {'state': '1'}
+    return {'Result':'[0]', 'Desc':'OK',"state":1}
+
 
 
 @app.get('close_room')
 async def close_room(rn: str, r_id: int):
     if rn not in game_rooms:
-        return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+        return {"Result": '-1', "Desc": 'Game room does not exist'}
     if game_rooms[rn].state > 1:
-        return {"ERR_NUM": '-4', "Desc": 'Game has already begun'}
+        return {"Result": '-4', "Desc": 'Game has already begun'}
     if r_id != game_rooms[rn].id:
-        return {"ERR_NUM": '-6', "Desc": 'Only admin can close room'}
+        return {"Result": '-6', "Desc": 'Only admin can close room'}
     game_rooms.pop(rn, None)
-    return {'state': '1'}
+    
+    return {'Result':'[0]', 'Desc':'OK',"state":1}
+
 
 
 @app.get('/activate_game')
 async def activate_game(rn: str, r_id: int):
     if rn not in game_rooms:
-        return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+        return {"Result": '-1', "Desc": 'Game room does not exist'}
     if game_rooms[rn].state > 1:
-        return {"ERR_NUM": '-4', "Desc": 'Game has already begun'}
+        return {"Result": '-4', "Desc": 'Game has already begun'}
     if game_rooms[rn].id != r_id:
-        return {"ERR_NUM": '-5', "Desc": 'Only room admin can start a game'}
+        return {"Result": '-5', "Desc": 'Only room admin can start a game'}
     player_names = game_rooms[rn].players
     players = []
     le = len(player_names)
@@ -166,7 +175,7 @@ async def activate_game(rn: str, r_id: int):
     game_rooms[rn].state = 2
     game_rooms[rn].game_id = new_game_id
     game_to_room_map[new_game_id] = rn
-    return {"game_id": str(new_game_id)}
+    return {'Result': '[0]', 'Desc':'OK','game_id': str(new_game_id)}
 
 
 @app.get('/first_move_multi')
@@ -187,8 +196,11 @@ async def first_move_multi(gid: int, pn: str, pc: int, piece: int, perm: int):
         return {'Result': '[-34]', 'Desc': 'Wrong player'}
     if room.player_codes[pn] != pc:
         return {'Result': '[-35]', 'Desc': 'Wrong Player Code'}
-    to_send = [game.start_game(piece, perm), game.last_new_squares]
-    return {'Result': str(to_send)}
+    to_send=game.start_game(piece, perm), game.last_new_squares
+    return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
+
+
+
 
 
 @app.get('/reg_move_multi')
@@ -211,8 +223,9 @@ async def reg_move_multi(gid: int, pn: str, pc: int, piece: int, perm: int, x_co
     print(room.player_codes)
     if room.player_codes[pn] != pc:
         return {'Result': '[-35]', 'Desc': 'Wrong Player Code'}
-    to_send = [game.move(game.curr_player_num, piece, perm, x_coor, y_coor), game.last_new_squares]
-    return {'Result': str(to_send)}
+    to_send=game.move(game.curr_player_num, piece, perm, x_coor, y_coor), game.last_new_squares
+    return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
+
 
 
 @app.get('/query_game_state')
@@ -222,7 +235,7 @@ async def query_game_state(gid: int):
     game = current_games[gid]
     state = game.started
     player_num = game.curr_player_num
-    return {'Started': state, 'Player Turn': player_num, 'Board': game.get_board()}
+    return{'Result': '[0]', 'Desc':'OK','Started': state, 'Player Turn': player_num, 'Board': game.get_board()}
 
 
 @app.get('/query_game_board')
@@ -232,7 +245,7 @@ async def query_game_state(gid: int):
     game = current_games[gid]
     state = game.started
     player_num = game.curr_player_num
-    return {'Board': game.get_board()}
+    return {'Result': '[0]', 'Desc':'OK','Board': game.get_board()}
 
 
 @app.get('/pass_turn_multi')
@@ -253,8 +266,8 @@ async def pass_turn_multi(gid: int, pn: str, pc: int):
         return {'Result': '[-34]', 'Desc': 'Wrong player'}
     if room.player_codes[pn] != pc:
         return {'Result': '[-35]', 'Desc': 'Wrong Player Code'}
-    to_send = [game.pass_turn(game.curr_player_num), game.last_new_squares]
-    return {'Result': str(to_send)}
+    to_send = str({game.pass_turn(game.curr_player_num), game.last_new_squares})
+    return {'Result': to_send, 'Desc':'OK'}
 
 
 # ----------------- single player version -----------------
@@ -283,38 +296,37 @@ async def start_new_game(p1: str = 'NULL', p2: str = 'NULL',
     new_game_id = hash(datetime.datetime.now().isoformat() + str(player_names))
     print(new_game_id)
     current_games[new_game_id] = EventGame(players)
-    return {"game_id": str(new_game_id)}
+    return {'Result': '[0]', 'Desc':'OK',"game_id": new_game_id}
 
 
 @app.get('/first_move')
 async def first_move(gid: int, piece: int, perm: int):
     print("hi", gid not in current_games)
     if gid not in current_games:
-        return {'Result': '[-22]'}
+        return {'Result': '[-22]','Desc':'Error - no game with given id'}
     game = current_games[gid]
     if game.started:
-        return {'Result': '[-33]'}
+        return {'Result': '[-33]','Desc':'Error - game already started!'}
+    to_send=game.start_game(piece, perm), game.last_new_squares
+     return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
 
-    to_send = [game.start_game(piece, perm), game.last_new_squares]
-    return {'Result': str(to_send)}
 
 
 @app.get('/reg_move')
 async def reg_move(gid: int, p_num: int, piece: int, perm: int, x_coor: int, y_coor: int):
     if gid not in current_games:
-        return {'Result': '[-22]'}
+        return {'Result': '[-22]','Desc':'Error - no game with given id'}
     game = current_games[gid]
     if not game.started:
-        return {'Result': '[-33]'}
-
-    to_send = [game.move(p_num, piece, perm, x_coor, y_coor), game.last_new_squares]
-    return {'Result': str(to_send)}
+        return {'Result': '[-33]','Desc':'Error - game not started!'}
+    to_send=game.move(p_num, piece, perm, x_coor, y_coor), game.last_new_squares
+    return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
 
 
 @app.get('/ai_move')  # ai_move is the same for multiplayer and singleplayer.
 async def ai_move(gid: int):
     if gid not in current_games:
-        return {'Result': '[-22]'}
+        return {'Result': '[-22]','Desc':'Error - no game with given id'}
     game = current_games[gid]
     if game.players[game.curr_player_num - 1].ai_player:  # if the current turn is of an AI player
         best_move = game.players[game.curr_player_num - 1].oracle.calc_move(
@@ -334,38 +346,40 @@ async def ai_move(gid: int):
     else:
         to_send = [-1]
     to_send = np.append(to_send, game.last_new_squares)
-    return {'Result': str(to_send)}
+    if len(to_send) <5:
+        return {'Result': '[0]', 'Desc':'OK','shape_num':str(to_send[0]),'permutation':str(to_send[1]),'number_of_squares_closed':str(to_send[2])}
+    return {'Result': '[0]', 'Desc':'OK','shape_num':str(to_send[0]),'permutation':str(to_send[1]),'x_position':str(to_send[2]),'y_position':str(to_send[3]),'number_of_squares_closed':str(to_send[4])}
 
 
 @app.get('/pass_turn')
 async def pass_turn(gid: int, p_num: int):
     if gid not in current_games:
-        return {'Result': '[-22]'}
+        return {'Result': '[-22]','Desc':'Error - no game with given id'}
     game = current_games[gid]
-    to_send = [game.pass_turn(p_num), game.last_new_squares]
-    return {'Result': str(to_send)}
+    to_send = game.pass_turn(p_num), game.last_new_squares
+    return {'Result': '[0]', 'Desc':'OK','more:':to_send}
 
 
 @app.get('/end_game')
 async def end_game(gid: int, r_id: int = -1):
     if gid not in current_games:
-        return {'Result': '[-22]'}
+        return {'Result': '[-22]','Desc':'Error - no game with given id'}
     if r_id == -1:
         if gid in game_to_room_map:
-            return {"ERR_NUM": '-2', "Desc": 'Room ID also needed'}
+            return {"Result": '-2', "Desc": 'Room ID also needed'}
         del current_games[gid]
     else:
         if gid not in game_to_room_map:
-            return {"ERR_NUM": '-1', "Desc": 'Game room does not exist'}
+            return {"Result": '-1', "Desc": 'Game room does not exist'}
         else:
             if game_rooms[game_to_room_map[gid]].game_id != r_id:
-                return {"ERR_NUM": '-3', "Desc": 'Wrong Room ID'}
+                return {"Result": '-3', "Desc": 'Wrong Room ID'}
             game_rooms[game_to_room_map[gid]].state = 1
             game_rooms[game_to_room_map[gid]] = -1
             game_to_room_map.pop(gid, None)
             del current_games[gid]
-    return {'Result': '[1]'}
-
+    to_send=1
+    return {'Result': '[0]', 'Desc':'OK','more:':str(to_send)}
 
 def run_server():
     print(f"Listening on port 80...")
