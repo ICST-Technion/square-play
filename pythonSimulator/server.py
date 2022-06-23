@@ -368,8 +368,8 @@ async def end_game(gid: int, r_id: int = -1):
 
 
 def run_server():
-    print(f"Listening on port 5000...")
-    uvicorn.run("server:app", host="127.0.0.1", port=5000)
+    print(f"Listening on port 80...")
+    uvicorn.run("server:app", host="127.0.0.1", port=80)
 
 
 if __name__ == '__main__':
