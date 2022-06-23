@@ -308,7 +308,7 @@ async def first_move(gid: int, piece: int, perm: int):
     if game.started:
         return {'Result': '[-33]','Desc':'Error - game already started!'}
     to_send=game.start_game(piece, perm), game.last_new_squares
-     return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
+    return {'Result': '[0]', 'Desc':'OK','number_that_indicates_whether_the_move_was_legal':str(to_send[0]),'number_of_squares_closed':str(to_send[1])}
 
 
 
