@@ -181,7 +181,7 @@ async def activate_game(rn: str, r_id: int):
         else:
             players.append(Player(name=name))
 
-    new_game_id = hash(datetime.datetime.now().isoformat() + str(new_game_id))
+    new_game_id = hash(datetime.datetime.now().isoformat() + str(player_names))
     current_games[new_game_id] = EventGame(players)
     game_rooms[rn].state = 2
     game_rooms[rn].game_id = new_game_id
@@ -453,11 +453,11 @@ async def join_broadcast_group(sid, msg):
 
 
 def run_server():
-    #  print(f"Listening on port 80...")
-    #  uvicorn.run("server:app", host="132.69.8.19", port=80)
+    print(f"Listening on port 80...")
+    uvicorn.run("server:app", host="132.69.8.19", port=80)
 
-    print(f"Listening on port 5000...")
-    uvicorn.run("server:app", host="127.0.0.1", port=5000)
+    #  print(f"Listening on port 5000...")
+    #  uvicorn.run("server:app", host="127.0.0.1", port=5000)
 
 
 if __name__ == '__main__':
