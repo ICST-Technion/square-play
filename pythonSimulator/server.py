@@ -76,7 +76,7 @@ async def create_new_room(rn: str, p1: str):
 
     room_id = hash(datetime.datetime.now().isoformat() + str(room_admin))
     game_rooms[room_name] = GameRoom(room_name, room_id, room_admin)
-    return {'Result': '[0]', 'Desc': 'OK', 'state': '1', "room_id": str(room_id), 'room_name': str(room_name)}
+    return {'Result': '0', 'Desc': 'OK', 'state': '1', "room_id": str(room_id), 'room_name': str(room_name)}
 
 
 @app.get('/query_waiting_room')
@@ -94,7 +94,7 @@ async def query_waiting_room(rn: str):
 @app.get('/query_all_rooms')
 async def query_all_rooms():
     games = str(game_rooms.keys())
-    return {'Result': '[0]', 'Desc': 'OK', 'Game list': games}
+    return {'Result': '0', 'Desc': 'OK', 'Game list': games}
 
 
 @app.get('/join_waiting_room')
@@ -111,7 +111,9 @@ async def join_waiting_room(rn: str, pn: str):
     game_rooms[rn].players.append(pn)
     code = hash(datetime.datetime.now().isoformat() + str(pn))
     game_rooms[rn].player_codes[pn] = code
-    return {'Result': '[0]', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': code}
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'Players': str(game_rooms[rn].players),
+                                         'Result': '0', 'Desc': 'OK'})
+    return {'Result': '0', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': code}
 
 
 @app.get('/remove_from_room')
@@ -128,7 +130,9 @@ async def remove_from_room(rn: str, r_id: int, pn: str):
         return {"Result": '-6', "Desc": 'Only admin can remove from room'}
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
-    return {'Result': '[0]', 'Desc': 'OK', "state": 1}
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Kicked', 'Players': str(game_rooms[rn].players),
+                                         'Result': '0', 'Desc': 'OK'})
+    return {'Result': '0', 'Desc': 'OK', "state": 1}
 
 
 @app.get('/leave_room')
@@ -146,7 +150,9 @@ async def leave_room(rn: str, pn: str, pc: int):
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
     game_rooms[rn].broadcast.pop(pn, None)
-    return {'Result': '[0]', 'Desc': 'OK', "state": 1}
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Left', 'Players': str(game_rooms[rn].players),
+                                         'Result': '0', 'Desc': 'OK'})
+    return {'Result': '0', 'Desc': 'OK', "state": 1}
 
 
 @app.get('close_room')
@@ -157,9 +163,11 @@ async def close_room(rn: str, r_id: int):
         return {"Result": '-4', "Desc": 'Game has already begun'}
     if r_id != game_rooms[rn].id:
         return {"Result": '-6', "Desc": 'Only admin can close room'}
+    room_name = game_rooms[rn].name
     game_rooms.pop(rn, None)
-
-    return {'Result': '[0]', 'Desc': 'OK', "state": 1}
+    await game_rooms[rn].broadcast_move({'Move': 'Room_Closed', 'Room': str(room_name),
+                                         'Result': '0', 'Desc': 'OK'})
+    return {'Result': '0', 'Desc': 'OK', "state": 1}
 
 
 @app.get('/activate_game')
@@ -187,9 +195,9 @@ async def activate_game(rn: str, r_id: int):
     game_rooms[rn].game_id = new_game_id
     game_to_room_map[new_game_id] = rn
     await game_rooms[rn].broadcast_move({'Move': 'Game_started', 'Players': str(player_names),
-                                         'Result': '[0]', 'Desc': 'OK', 'game_id': str(new_game_id)
+                                         'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)
                                          })
-    return {'Result': '[0]', 'Desc': 'OK', 'game_id': str(new_game_id)}
+    return {'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)}
 
 
 @app.get('/first_move_multi')
@@ -211,11 +219,11 @@ async def first_move_multi(gid: int, pn: str, pc: int, piece: int, perm: int):
     if room.player_codes[pn] != pc:
         return {'Result': '[-35]', 'Desc': 'Wrong Player Code'}
     to_send = game.start_game(piece, perm), game.last_new_squares
-    await room.broadcast_move({'Player': pn, "Piece": piece, "Perm": perm, 'Result': '[0]', 'Desc': 'OK',
+    await room.broadcast_move({'Player': pn, "Piece": piece, "Perm": perm, 'Result': '0', 'Desc': 'OK',
                                'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
                                'number_of_squares_closed': str(to_send[1])
                                })
-    return {'Result': '[0]', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
+    return {'Result': '0', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
             'number_of_squares_closed': str(to_send[1])}
 
 
@@ -241,11 +249,11 @@ async def reg_move_multi(gid: int, pn: str, pc: int, piece: int, perm: int, x_co
         return {'Result': '[-35]', 'Desc': 'Wrong Player Code'}
     to_send = game.move(game.curr_player_num, piece, perm, x_coor, y_coor), game.last_new_squares
     await room.broadcast_move({'Player': pn, "Piece": piece, "Perm": perm, 'x_coor': x_coor, 'y_coor': y_coor,
-                               'Result': '[0]', 'Desc': 'OK',
+                               'Result': '0', 'Desc': 'OK',
                                'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
                                'number_of_squares_closed': str(to_send[1])
                                })
-    return {'Result': '[0]', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
+    return {'Result': '0', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
             'number_of_squares_closed': str(to_send[1])}
 
 
@@ -256,7 +264,7 @@ async def query_game_state(gid: int):
     game = current_games[gid]
     state = game.started
     player_num = game.curr_player_num
-    return {'Result': '[0]', 'Desc': 'OK', 'Started': state, 'Player Turn': player_num, 'Board': game.get_board()}
+    return {'Result': '0', 'Desc': 'OK', 'Started': state, 'Player Turn': player_num, 'Board': game.get_board()}
 
 
 @app.get('/query_game_board')
@@ -266,7 +274,7 @@ async def query_game_state(gid: int):
     game = current_games[gid]
     state = game.started
     player_num = game.curr_player_num
-    return {'Result': '[0]', 'Desc': 'OK', 'Board': game.get_board()}
+    return {'Result': '0', 'Desc': 'OK', 'Board': game.get_board()}
 
 
 @app.get('/pass_turn_multi')
@@ -320,7 +328,7 @@ async def start_new_game(p1: str = 'NULL', p2: str = 'NULL',
     new_game_id = hash(datetime.datetime.now().isoformat() + str(player_names))
     print(new_game_id)
     current_games[new_game_id] = EventGame(players)
-    return {'Result': '[0]', 'Desc': 'OK', "game_id": new_game_id}
+    return {'Result': '0', 'Desc': 'OK', "game_id": new_game_id}
 
 
 @app.get('/first_move')
@@ -332,7 +340,7 @@ async def first_move(gid: int, piece: int, perm: int):
     if game.started:
         return {'Result': '[-33]', 'Desc': 'Error - game already started!'}
     to_send = game.start_game(piece, perm), game.last_new_squares
-    return {'Result': '[0]', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
+    return {'Result': '0', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
             'number_of_squares_closed': str(to_send[1])}
 
 
@@ -344,7 +352,7 @@ async def reg_move(gid: int, p_num: int, piece: int, perm: int, x_coor: int, y_c
     if not game.started:
         return {'Result': '[-33]', 'Desc': 'Error - game not started!'}
     to_send = game.move(p_num, piece, perm, x_coor, y_coor), game.last_new_squares
-    return {'Result': '[0]', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
+    return {'Result': '0', 'Desc': 'OK', 'number_that_indicates_whether_the_move_was_legal': str(to_send[0]),
             'number_of_squares_closed': str(to_send[1])}
 
 
@@ -374,20 +382,20 @@ async def ai_move(gid: int):
     if gid in game_to_room_map:
         room = game_rooms[game_to_room_map[gid]]
         if len(to_send) < 5:
-            await room.broadcast_move({'Move': 'Ai_Move', 'Result': '[0]', 'Desc': 'OK',
+            await room.broadcast_move({'Move': 'Ai_Move', 'Result': '0', 'Desc': 'OK',
                                        'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
                                        'number_of_squares_closed': str(to_send[2])
                                        })
         else:
-            await room.broadcast_move({'Move': 'Ai_Move', 'Result': '[0]', 'Desc': 'OK',
+            await room.broadcast_move({'Move': 'Ai_Move', 'Result': '0', 'Desc': 'OK',
                                        'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
                                        'x_position': str(to_send[2]), 'y_position': str(to_send[3]),
                                        'number_of_squares_closed': str(to_send[4])
                                        })
     if len(to_send) < 5:
-        return {'Result': '[0]', 'Desc': 'OK', 'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
+        return {'Result': '0', 'Desc': 'OK', 'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
                 'number_of_squares_closed': str(to_send[2])}
-    return {'Result': '[0]', 'Desc': 'OK', 'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
+    return {'Result': '0', 'Desc': 'OK', 'shape_num': str(to_send[0]), 'permutation': str(to_send[1]),
             'x_position': str(to_send[2]), 'y_position': str(to_send[3]), 'number_of_squares_closed': str(to_send[4])}
 
 
@@ -397,7 +405,7 @@ async def pass_turn(gid: int, p_num: int):
         return {'Result': '[-22]', 'Desc': 'Error - no game with given id'}
     game = current_games[gid]
     to_send = game.pass_turn(p_num), game.last_new_squares
-    return {'Result': '[0]', 'Desc': 'OK', 'more:': to_send}
+    return {'Result': '0', 'Desc': 'OK', 'more:': to_send}
 
 
 @app.get('/end_game')
@@ -415,14 +423,14 @@ async def end_game(gid: int, r_id: int = -1):
         else:
             if game_rooms[game_to_room_map[gid]].game_id != r_id:
                 return {"Result": '-3', "Desc": 'Wrong Room ID'}
-            await game_rooms[game_to_room_map[gid]].broadcast_move({'Move': 'Game End', 'Result': '[0]',
+            await game_rooms[game_to_room_map[gid]].broadcast_move({'Move': 'Game End', 'Result': '0',
                                                                     'Desc': 'OK', 'more:': to_send})
             game_rooms[game_to_room_map[gid]].state = 1
             game_rooms[game_to_room_map[gid]] = -1
             game_to_room_map.pop(gid, None)
             del current_games[gid]
 
-    return {'Result': '[0]', 'Desc': 'OK', 'more:': str(to_send)}
+    return {'Result': '0', 'Desc': 'OK', 'more:': str(to_send)}
 
 
 app.mount("/", socket_app)  # Here we mount socket app to main fastapi app
