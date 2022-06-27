@@ -94,7 +94,7 @@ async def query_waiting_room(rn: str):
     to_send = str(to_send)
     return {'Result': '0', 'Desc': 'OK','state': str(game_rooms[rn].state),
                    'game_id': str(game_rooms[rn].game_id),
-                   'players': str(game_rooms[rn].players)}
+                   'Players': str(game_rooms[rn].players)}
 
 
 @app.get('/query_all_rooms')
