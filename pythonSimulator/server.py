@@ -86,7 +86,10 @@ async def query_waiting_room(rn: str):
     if rn not in game_rooms:
         to_send = {'state': '-1', 'game_id': '-1'}
     else:
-        to_send = {'state': str(game_rooms[rn].state), 'game_id': str(game_rooms[rn].game_id)}
+        to_send = {'state': str(game_rooms[rn].state),
+                   'game_id': str(game_rooms[rn].game_id),
+                   'players': str(game_rooms[rn].players)
+                   }
     to_send = str(to_send)
     return {'Result': to_send, 'Desc': 'OK'}
 
