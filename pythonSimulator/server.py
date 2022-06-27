@@ -85,13 +85,16 @@ async def query_waiting_room(rn: str):
     to_send = ""
     if rn not in game_rooms:
         to_send = {'state': '-1', 'game_id': '-1'}
+        return {'Result': '-1', 'Desc': 'Room doesnt exist!'}
     else:
         to_send = {'state': str(game_rooms[rn].state),
                    'game_id': str(game_rooms[rn].game_id),
                    'players': str(game_rooms[rn].players)
                    }
     to_send = str(to_send)
-    return {'Result': to_send, 'Desc': 'OK'}
+    return {'Result': '0', 'Desc': 'OK','state': str(game_rooms[rn].state),
+                   'game_id': str(game_rooms[rn].game_id),
+                   'players': str(game_rooms[rn].players)}
 
 
 @app.get('/query_all_rooms')
