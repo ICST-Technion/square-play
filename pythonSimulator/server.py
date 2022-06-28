@@ -94,9 +94,14 @@ async def query_waiting_room(rn: str):
                    'players': str(game_rooms[rn].players)
                    }
     to_send = str(to_send)
+    pnames=game_rooms[rn].players
+    p1=pnames[0]
+    p2=pnames[1]
+    p3=pnames[2]
+    p4=pnames[3]
     return {'Result': '0', 'Desc': 'OK','state': str(game_rooms[rn].state),
                    'game_id': str(game_rooms[rn].game_id),
-                   'Players': str(game_rooms[rn].players)}
+                   'p1': p1,'p2':p2,'p3':p3,'p4':p4}
 
 
 @app.get('/query_all_rooms')
@@ -119,7 +124,12 @@ async def join_waiting_room(rn: str, pn: str):
     game_rooms[rn].players.append(pn)
     code = hash(datetime.datetime.now().isoformat() + str(pn))
     game_rooms[rn].player_codes[pn] = code
-    await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'Players': str(game_rooms[rn].players),
+    pnames=game_rooms[rn].players
+    p1=pnames[0]
+    p2=pnames[1]
+    p3=pnames[2]
+    p4=pnames[3]
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'p1': p1,'p2':p2,'p3':p3,'p4':p4,
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': code}
 
@@ -138,7 +148,12 @@ async def remove_from_room(rn: str, r_id: int, pn: str):
         return {"Result": '-6', "Desc": 'Only admin can remove from room'}
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
-    await game_rooms[rn].broadcast_move({'Move': 'Player_Kicked', 'Players': str(game_rooms[rn].players),
+    pnames=game_rooms[rn].players
+    p1=pnames[0]
+    p2=pnames[1]
+    p3=pnames[2]
+    p4=pnames[3]
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Kicked', 'p1': p1,'p2':p2,'p3':p3,'p4':p4,
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', "state": 1}
 
@@ -158,6 +173,11 @@ async def leave_room(rn: str, pn: str, pc: int):
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
     game_rooms[rn].broadcast.pop(pn, None)
+    pnames=game_rooms[rn].players
+    p1=pnames[0]
+    p2=pnames[1]
+    p3=pnames[2]
+    p4=pnames[3]
     await game_rooms[rn].broadcast_move({'Move': 'Player_Left', 'Players': str(game_rooms[rn].players),
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', "state": 1}
@@ -202,7 +222,12 @@ async def activate_game(rn: str, r_id: int):
     game_rooms[rn].state = 2
     game_rooms[rn].game_id = new_game_id
     game_to_room_map[new_game_id] = rn
-    await game_rooms[rn].broadcast_move({'Move': 'Game_started', 'Players': str(player_names),
+    pnames=game_rooms[rn].players
+    p1=pnames[0]
+    p2=pnames[1]
+    p3=pnames[2]
+    p4=pnames[3]
+    await game_rooms[rn].broadcast_move({'Move': 'Game_started','p1': p1,'p2':p2,'p3':p3,'p4':p4,
                                          'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)
                                          })
     return {'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)}
