@@ -76,7 +76,9 @@ async def create_new_room(rn: str, p1: str):
 
     room_id = hash(datetime.datetime.now().isoformat() + str(room_admin))
     game_rooms[room_name] = GameRoom(room_name, room_id, room_admin)
-    return {'Result': '0', 'Desc': 'OK', 'state': '1', "room_id": str(room_id), 'room_name': str(room_name)}
+    code = hash(datetime.datetime.now().isoformat() + str(pn))
+    game_rooms[rn].player_codes[pn] = code
+    return {'Result': '0', 'Desc': 'OK', 'state': '1', "room_id": str(room_id), 'room_name': str(room_name),"player_code":str(code)}
 
 
 @app.get('/query_waiting_room')
