@@ -101,7 +101,7 @@ async def query_waiting_room(rn: str):
     p4=pnames[3]
     return {'Result': '0', 'Desc': 'OK','state': str(game_rooms[rn].state),
                    'game_id': str(game_rooms[rn].game_id),
-                   'p1': p1,'p2':p2,'p3':p3,'p4':p4}
+                   'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4)}
 
 
 @app.get('/query_all_rooms')
@@ -129,9 +129,9 @@ async def join_waiting_room(rn: str, pn: str):
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
-    await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'p1': p1,'p2':p2,'p3':p3,'p4':p4,
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4),
                                          'Result': '0', 'Desc': 'OK'})
-    return {'Result': '0', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': code}
+    return {'Result': '0', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': str(code)}
 
 
 @app.get('/remove_from_room')
@@ -153,7 +153,7 @@ async def remove_from_room(rn: str, r_id: int, pn: str):
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
-    await game_rooms[rn].broadcast_move({'Move': 'Player_Kicked', 'p1': p1,'p2':p2,'p3':p3,'p4':p4,
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Kicked', 'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4),
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', "state": 1}
 
@@ -178,7 +178,7 @@ async def leave_room(rn: str, pn: str, pc: int):
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
-    await game_rooms[rn].broadcast_move({'Move': 'Player_Left', 'Players': str(game_rooms[rn].players),
+    await game_rooms[rn].broadcast_move({'Move': 'Player_Left', 'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4),
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', "state": 1}
 
@@ -227,7 +227,7 @@ async def activate_game(rn: str, r_id: int):
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
-    await game_rooms[rn].broadcast_move({'Move': 'Game_started','p1': p1,'p2':p2,'p3':p3,'p4':p4,
+    await game_rooms[rn].broadcast_move({'Move': 'Game_started','p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4),
                                          'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)
                                          })
     return {'Result': '0', 'Desc': 'OK', 'game_id': str(new_game_id)}
