@@ -50,8 +50,10 @@ public abstract class BaseShape : MonoBehaviour
     public void setupStartPos(float x, float y, Transform startTrans)
     {
         var pos = new Vector3(x, y);
-        this.transform.localPosition = pos;
         this.startTransformation = startTrans;
+        this.transform.SetParent(startTrans);
+        this.transform.localPosition = pos;
+        print("pos: " + x + " " + y);
         this.startingPosition = pos;
     }
 
@@ -66,7 +68,6 @@ public abstract class BaseShape : MonoBehaviour
         this.nearestCell = this.getNearesetCell();
         int new_position_x = this.nearestCell.x;
         int new_position_y = this.nearestCell.y;
-
 
         var response = await this.shapeManager.sendMove(
             piece_num, permutation, new_position_x, new_position_y);
@@ -193,7 +194,6 @@ public abstract class BaseShape : MonoBehaviour
         this.transform.SetParent(this.nearestCell.transform.parent);
         this.transform.position = this.nearestCell.transform.position;
         this.transform.localPosition = this.nearestCell.upperRightEdge();
-        print("placed!");
     }
 
     protected bool checkPositionInBoard()
@@ -214,7 +214,6 @@ public abstract class BaseShape : MonoBehaviour
 
     }
 
-
     protected CellClass getNearesetCell()
     {
         this.transform.SetParent(this.shapeManager.boardtrans);
@@ -234,11 +233,21 @@ public abstract class BaseShape : MonoBehaviour
         }
     }
 
+    public void placePieceOnBoard(int x, int y, int perm)
+    {
+        this.transform.SetParent(this.shapeManager.boardtrans);
+        var startingPos = new Vector3(x, y);
+        this.nearestCell = this.shapeManager.getNearestCell(startingPos);
+        this.transform.SetParent(this.shapeManager.canvasTrans);
+        this.rotateByPermutation(perm);
+        this.Place();
+    }
+
     #endregion
 
     #region Events
 
-    public bool canBeMoved() => playerNum == this.shapeManager.currentPlayer;
+    public bool canBeMoved() => this.shapeManager.canBeMoved(this.playerNum);
 
     public bool shapeOfHuman() => this.shapeManager.isHeHuman();//one can assume that this is always called after can be moved.
 
@@ -273,7 +282,6 @@ public abstract class BaseShape : MonoBehaviour
                         //var childMatch = this.shapeManager.showRotationsForShape.transform.GetChild(i);
                         //childMatch.gameObject.SetActive(true);
                         Destroy(this.shapeManager.showRotationsForShape.transform.GetChild(i).gameObject);
-
                     }
                 }
                 else

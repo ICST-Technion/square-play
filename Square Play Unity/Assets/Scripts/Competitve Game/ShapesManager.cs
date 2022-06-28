@@ -19,7 +19,7 @@ public class ShapesManager : MonoBehaviour
 
     public float gameScale = 33;
 
-    static bool wantsOnlineGame;
+    private bool wantsOnlineGame = GameValues.wantsOnlineGame;
 
     private bool currentPlayerContinues = false;
 
@@ -36,6 +36,8 @@ public class ShapesManager : MonoBehaviour
 
     public bool isFirstTurn;
 
+    public bool amIReceiving = false;
+    public GameObject[] playerTexts;
     private string[] shapeOrder = new string[16]
     {
         "Six","H","shape3","Gimel","F","E","P","A","notnot","ground","Five","chair","G","C","Lambda","Seven"
@@ -76,25 +78,12 @@ public class ShapesManager : MonoBehaviour
     private void setupShapes(Color teamColor, PlayerClass bank, bool isUp = false, bool isDown = false)
     {
         int playerNum = bank.playerNum;
-        Vector3 textPos = bank.transform.GetChild(0).localPosition;
-        var absoluteX = bank.transform.localPosition.x + textPos.x;
-        var absoluteY = bank.transform.localPosition.y + textPos.y;
-        if (isUp)
-        {
-            absoluteX += 70;
-            absoluteY += 50;
-        }
-        else if (isDown)
-        {
-            absoluteX += 70;
-            absoluteY += 40;
-        }
-        else
-        {
-            absoluteX += -35;
-            absoluteY += -40;
-        }
-
+        // Vector3 textPos = //this.gameManager.players[playerNum].playerNameTextObj.transform.localPosition;
+        playerTexts[playerNum - 1].transform.SetParent(bank.gameObject.transform);
+        Vector3 textPos = playerTexts[playerNum - 1].transform.localPosition;
+        print(textPos);
+        var absoluteX = textPos.x;//+ 
+        var absoluteY = textPos.y;//+ 
         int x_add = 0, y_add = 0;
 
         bank.playerShapes.ForEach(delegate (BaseShape shape)
@@ -115,8 +104,6 @@ public class ShapesManager : MonoBehaviour
             {
                 y_add++;
             }
-
-
         });
     }
 
@@ -142,19 +129,27 @@ public class ShapesManager : MonoBehaviour
         print(this.currentPlayer + " closed: " + numberClosed + " squares");
     }
 
-
-
     private async Task setInteractive(List<BaseShape> allShapes, bool value)
     {
-        if (!this.isHeHuman() && value)
+        if ((!this.isHeHuman() && value) || (value && !this.isHeHuman() && this.gameManager.isAdmin() && wantsOnlineGame))
         {
-            int[] aiMove = await this.requestAiMove();
-            if (aiMove.Length > 2)
             {
-                await MoveShapeForAi(aiMove, allShapes);
-                if (this.isFirstTurn)
+                int[] aiMove = await this.requestAiMove();
+                if (aiMove.Length > 2)
                 {
-                    await this.endFirstMove();
+                    if (wantsOnlineGame)
+                    {
+                        await MoveShapeForAi(aiMove, gameManager.players[currentPlayer].playerShapes);
+                    }
+                    else
+                    {
+                        await MoveShapeForAi(aiMove, allShapes);
+                    }
+
+                    if (this.isFirstTurn)
+                    {
+                        await this.endFirstMove();
+                    }
                 }
             }
         }
@@ -166,6 +161,11 @@ public class ShapesManager : MonoBehaviour
         int permutation = aiMove[1];
         int newX = aiMove[2];
         int newY = aiMove[3];
+        if (this.isFirstTurn)
+        {
+            newX = 15;
+            newY = 15;
+        }
         int closed_squares = aiMove[4];
         allShapes.ForEach(delegate (BaseShape shape)
         {
@@ -192,13 +192,13 @@ public class ShapesManager : MonoBehaviour
             print("Switched to: " + this.currentPlayer);
             this.gameManager.updateCurrentPlayerName(this.currentPlayer);
 
-            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0 && gameManager.players[0].isItMe);
+            await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
 
-            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1 && gameManager.players[1].isItMe);
+            await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
 
-            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2 && gameManager.players[2].isItMe);
+            await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
 
-            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3 && gameManager.players[3].isItMe);
+            await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
 
             this.numOfMovesForCurrentPlayer = 1;
 
@@ -216,16 +216,40 @@ public class ShapesManager : MonoBehaviour
             this.currentPlayerContinues = true;
             if (!this.isHeHuman())
             {
-                await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0 && gameManager.players[0].isItMe);
+                await setInteractive(gameManager.players[0].playerShapes, currentPlayer == 0);
 
-                await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1 && gameManager.players[1].isItMe);
+                await setInteractive(gameManager.players[1].playerShapes, currentPlayer == 1);
 
-                await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2 && gameManager.players[2].isItMe);
+                await setInteractive(gameManager.players[2].playerShapes, currentPlayer == 2);
 
-                await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3 && gameManager.players[3].isItMe);
+                await setInteractive(gameManager.players[3].playerShapes, currentPlayer == 3);
 
                 this.gameManager.updateNumOfMovesLeft(this.numOfMovesForCurrentPlayer);
                 //this.gameManager.resetTimeLeftForCurrentPlayer();
+            }
+        }
+    }
+
+    public bool canBeMoved(int shapesPlayerNum)
+    {
+        bool iscurr = shapesPlayerNum == this.currentPlayer;
+        if (wantsOnlineGame)
+        {
+            iscurr = iscurr && gameManager.players[shapesPlayerNum].isItMe;
+        }
+        return iscurr;
+    }
+
+    public async Task updateReceviedMove(string pname, int piece, int perm, int x, int y, int legal_num, int closed_num)
+    {
+        foreach (var shape in gameManager.players[currentPlayer].playerShapes)
+        {
+            if (shape.piece_num == piece)
+            {
+                shape.placePieceOnBoard(x, y, perm);
+                this.currentPlayerClosedSquares(closed_num);
+                await this.switchTurn();
+                return;
             }
         }
     }
@@ -235,10 +259,9 @@ public class ShapesManager : MonoBehaviour
         this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = true;
         await this.switchTurn();
-
     }
 
-    private async Task endFirstMove()
+    public async Task endFirstMove()
     {
         this.numOfMovesForCurrentPlayer = 0;
         this.isFirstTurn = false;

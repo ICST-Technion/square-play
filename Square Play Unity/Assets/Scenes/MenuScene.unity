@@ -1221,6 +1221,62 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 109248676}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: joinGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: MenuUI, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 721046934640157991, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 109248676}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: createGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: MenuUI, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1341244984238784453, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 2990017451394034218, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
       propertyPath: m_Name
       value: Online Multiplayer Canvas
@@ -1230,8 +1286,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5181378311017212219, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: -1289.4257
+      objectReference: {fileID: 0}
+    - target: {fileID: 5181378311017212219, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -29.42566
+      value: 55.28717
       objectReference: {fileID: 0}
     - target: {fileID: 7132088796311387990, guid: 62db8471560ee4e4f8660de9fab109dd, type: 3}
       propertyPath: m_Camera

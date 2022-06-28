@@ -1,90 +1,112 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using UnityEngine;
+using Newtonsoft.Json;
 //using System.Net.Http.WebRequest;
-
+using SocketIOClient;
+using SocketIOClient.Newtonsoft.Json;
+using UnityEngine;
 public class NetworkManager : MonoBehaviour
 {
     #region Network helpers
+    [SerializeField]
+    private CompetitiveGameManager gameManager;
     private string[] empty = { "", "", "", "", "", "", "" };
-    private const int namesCode = 0;
+    private enum Code : int
+    {
+        namesCode, firstMoveCode, realMoveCode,
+        aiMoveCode, passTurnCode, newRoomCode,
+        joinRoomCode, activateGameCode, leaveGameCode, queryWaitingRoomCode
+    };
+
+    #region Response and Data out literals
     private string[] namesFromUnity = { "p1", "p2", "p3", "p4" };
     private string[] namesRespBack = { "game_id" };
-    private const int firstMoveCode = 1;
     private string[] firstFromUnity = { "piece", "perm" };
     private string[] firstRespBack = { "d" };
-    private const int realMoveCode = 2;
     private string[] realFromUnity = { "p_num", "piece", "perm", "x_coor", "y_coor" };
     private string[] realRespBack = { "number that indicates whether the move was legal", "number of squares closed" };
-    private const int aiMoveCode = 3;
     private string[] aiFromUnity = { "p_num" };
     private string[] aiRespBack = { "shape num", "permutation", "x position", "y position", "number of squares closed" };
-    private const int passTurnCode = 4;
-    private const int newGameCode = 5;
-    private string[] newGameFromUnity = { "p_name" };
-    private string[] newGameRespBack = { "game_id", "p_num" };
-    private const int joinGameCode = 6;
-    private string[] joinGameFromUnity = { "game_id", "p_name" };
-    private string[] joinGameRespBack = { "p_num" };
-    private const int leaveGame = 7;
-    static bool wantsToCreateGame;
-    static bool wantsOnlineGame;
-    private struct namesRespBackStr { public string game_id; }
-    private struct firstRespBackStr { public string some; }
-    private struct realRespBackStr { public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
-    private struct aiRespBackStr { public int shape_num; public int permutation; public int x_position; public int y_position; public int number_of_squares_closed; };
-    private struct newGameRespBackStr { public string game_id; public string player_num; }
-    private struct joinGameRespBackStr { public string player_num; }
+    private string[] newRoomFromUnity = { "rn", "p1" };
+    private string[] newRoomRespBack = { "room_id", "room_name" };
+    private string[] joinRoomFromUnity = { "rn", "pn" };
+    private string[] joinRoomRespBack = { "player_code" };
+    private string[] leaveRoomFromUnity = { "rn", "pn", "pc" };
+    private string[] leaveRoomRespBack = { "state" };
+    private string[] activateRoomFromUnity = { "rn", "r_id" };
+    private string[] activateRoomRespBack = { "game_id" };
+    #endregion
+    private bool wantsToCreateGame = GameValues.wantsToCreateGame;
+    private bool wantsOnlineGame = GameValues.wantsOnlineGame;
 
-    [SerializeField]
-    private string[] _dataOut;
-    private int[] _dataIn;
-    private PlayerClass[] players;
+    public string errorFromServer;
+
+    #region Response structs - translated into, from JSON.
+    private struct namesRespBackStr { public int Result; public string Desc; public string game_id; }
+    private struct firstRespBackStr { public int Result; public string Desc; public string some; }
+    private struct realRespBackStr { public string Move; public int Result; public string Desc; public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
+    private struct aiRespBackStr { public int Result; public string Desc; public int shape_num; public int permutation; public int x_position; public int y_position; public int number_of_squares_closed; };
+    private struct moveUpdateStr { public string Move; public string Player; public int Result; public string Desc; public int Piece; public int Perm; public int x_coor; public int y_coor; public int number_that_indicates_whether_the_move_was_legal; public int number_of_squares_closed; };
+    private struct newRoomRespBackStr { public int Result; public string Desc; public string room_id; public string room_name; public string player_code; }
+    private struct joinWaitingStr { public int Result; public string Desc; public string p1; public string p2; public string p3; public string p4; };
+    private struct joinRoomRespBackStr { public int Result; public string Desc; public string player_code; }
+    private struct activateGameRespBackStr { public string Move; public string p1; public string p2; public string p3; public string p4; public string Result; public string Desc; public string game_id; };
+    private struct genericAnswerStr { public int Result; public string Desc; public string Move; };
+    private struct socketIoMsgStr { public string rn; public string pn; public string pc; };
+    private string[] getPlayerArrayActivate(activateGameRespBackStr resp)
+    {
+        return new string[] { resp.p1, resp.p2, resp.p3, resp.p4 };
+    }
+    private string[] getPlayerArrayJoin(joinWaitingStr resp)
+    {
+        return new string[] { resp.p1, resp.p2, resp.p3, resp.p4 };
+    }
 
     #endregion
 
+    [SerializeField]
+    private string[] _dataOut;
+    [SerializeField]
+    private int[] _dataIn;
+    [SerializeField]
+    private PlayerClass[] players;
+    public bool isAdmin = false;
+
+    #endregion
+
+    #region Server addressing
     private string _url = "http://132.69.8.19";
     private string _port = "80";
     private string _server_http_addr = "";
-    private string _currentGameId = "";
     private HttpClient _client;
-    private HttpListener _listener;
-    //private WebRequestHandler _clientHandler;
+    private SocketIOUnity _listenerSocket;
+    #endregion
 
-    /*
-        Examples of valid GET messages:
-        http://url:port/start_new_game?p1=p_1&p2=p_2&p3=AI_Player1&p4=AI_Player2
-        http://url:port/first_move?gid=1298297976736304479&piece=2&perm=1
-        http://url:port/reg_move?gid=1298297976736304479&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
-        http://url:port/pass_turn?gid=1298297976736304479&p_num=2
-        http://url:port/ai_move?gid=1298297976736304479
-        http://url:port/end_game?gid=1298297976736304479
-    */
+    #region Room identifiers and variables
+    private string _roomId = "";
+    public string roomName = "";
+    private string _playerCode = "";
+    public string playerName = "";
+    #endregion
+
+    [SerializeField]
+    private string _currentGameId = "";
+
+
     // Start is called before the first frame update
     void Start()
     {
-        /*X509Store store;
-        try{
-            store =new X509Store(StoreName.My, StoreLocation.CurrentUser);
-            store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadOnly);
-        }
-        finally*/
-        //System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-
         _server_http_addr = this._url + ":" + this._port + "/";
 
-
-
-        /*_clientHandler = new WebRequestHandler();
-        _clientHandler.ClientCertificates.Add(cert);
-
-        _client = new HttpClient(_clientHandler);*/
         _client = new HttpClient();
-        _listener = new HttpListener();
-        _listener.Prefixes.Add(_server_http_addr);
-        _listener.Start();
+        initializeListenSocket();
+        onListenerJoinRequest();
+        onListenerMoveUpdate();
+
+        _listenerSocket.Connect();
     }
 
     // Update is called once per frame
@@ -93,120 +115,35 @@ public class NetworkManager : MonoBehaviour
 
     }
 
-    /*
-for a real player move: 
-From Unity: [player num,shape num, permutation,x position, y position]
-Response from Backend: [ number that indicates whether the move was legal , number of squares closed]
-
-for ai player move: 
-From Unity: [player num]
-Response from Backend: [ shape num,permutation,x position, y position, number of squares closed]
-*/
     #region Generic network functions
-    private async Task<int[]> sendMessageByCode(int code)
+    private async Task sendMessageByCode(Code code)
     {
-        try
-        {
-            var dataout = constructDataOut(code);
-            var response = await _client.GetAsync(_server_http_addr + dataout);
-            string result = await response.Content.ReadAsStringAsync();
-            parseReply(result, code);
-            return _dataIn;
-        }
-        catch (Exception e)
-        {
-            print("An exception occourd in sending names to server!\n The exception is:");
-            print(e);
-            //this.OnApplicationQuit();
-            return new int[1] { -1 };
-        }
+        var dataout = constructDataOut(code);
+        var response = await _client.GetAsync(_server_http_addr + dataout);
+        string result = await response.Content.ReadAsStringAsync();
+        //Debug.Log(result);
+        parseReply(result, code);
     }
 
-    private void parseReply(string result, int code = 0)//
-    {
-        string[] addition = { };
-        string str = "Data";
-        _dataIn = new int[5];
-        switch (code)
-        {
-            case namesCode:
-                addition = namesRespBack;
-                str = "Names";
-                namesRespBackStr nameParesd = JsonUtility.FromJson<namesRespBackStr>(result);
-                _dataIn[0] = int.Parse(nameParesd.game_id.Substring(0, 3));
-                this._currentGameId = nameParesd.game_id;
-                break;
-            case firstMoveCode:
-                addition = firstRespBack;
-                str = "First Move";
-                firstRespBackStr firstParsed = JsonUtility.FromJson<firstRespBackStr>(result);
-                _dataIn[0] = 1;
-                break;
-            case realMoveCode:
-                addition = realRespBack;
-                str = "Move";
-                realRespBackStr moveParsed = JsonUtility.FromJson<realRespBackStr>(result);
-                _dataIn[0] = moveParsed.number_that_indicates_whether_the_move_was_legal;
-                _dataIn[1] = moveParsed.number_of_squares_closed;
-                break;
-            case aiMoveCode:
-                addition = aiRespBack;
-                str = "Ai move request";
-                aiRespBackStr aiMove = JsonUtility.FromJson<aiRespBackStr>(result);
-                _dataIn[0] = aiMove.shape_num;
-                _dataIn[1] = aiMove.permutation;
-                _dataIn[2] = aiMove.x_position;
-                _dataIn[3] = aiMove.y_position;
-                _dataIn[4] = aiMove.number_of_squares_closed;
-                break;
-            case passTurnCode:
-                addition = empty;
-                str = "Skip turn";
-                break;
-            case newGameCode:
-                addition = newGameRespBack;
-                str = "New game created";
-                newGameRespBackStr newGameParesd = JsonUtility.FromJson<newGameRespBackStr>(result);
-                _dataIn[0] = int.Parse(newGameParesd.game_id.Substring(0, 3));
-                _dataIn[1] = int.Parse(newGameParesd.player_num.Substring(0, 3));
-                this._currentGameId = newGameParesd.game_id;
-                break;
-            case joinGameCode:
-                addition = joinGameRespBack;
-                str = "Joined game!";
-                joinGameRespBackStr joinGameParsed = JsonUtility.FromJson<joinGameRespBackStr>(result);
-                _dataIn[0] = int.Parse(joinGameParsed.player_num.Substring(0, 3));
-                break;
-
-            default:
-                addition = empty;
-                break;
-        }
-        str = ("For " + str + ", got from server: " + "\n");
-        for (int i = 0; i < addition.Length; i++)
-        {
-            str += (addition[i] + ": " + _dataIn[i] + "\n");
-        }
-        Debug.Log(str);
-    }
-
-    private string constructDataOut(int code = 0)
+    private string constructDataOut(Code code = 0)
     {
         string[] addition = { };
         string str = "Data";
         string strOut = "";
+
         switch (code)
         {
-            case namesCode:
+            case Code.namesCode:
                 addition = namesFromUnity;
                 strOut = "start_new_game?";
                 str = "Names";
                 break;
-            case firstMoveCode:
+            case Code.firstMoveCode:
                 addition = firstFromUnity;
                 if (wantsOnlineGame)
                 {
-                    strOut = "first_move_multi?gid=" + _currentGameId + "&";
+                    strOut = "first_move_multi?gid=" + _currentGameId + "&pn=" +
+                     this.playerName + "&pc=" + this._playerCode + "&";
                 }
                 else
                 {
@@ -214,11 +151,12 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 }
                 str = "First move";
                 break;
-            case realMoveCode:
+            case Code.realMoveCode:
                 addition = realFromUnity;
                 if (wantsOnlineGame)
                 {
-                    strOut = "reg_move_multi?gid=" + _currentGameId + "&";
+                    strOut = "reg_move_multi?gid=" + _currentGameId + "&pn=" +
+                     this.playerName + "&pc=" + this._playerCode + "&";
                 }
                 else
                 {
@@ -226,35 +164,46 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 }
                 str = "Move";
                 break;
-            case aiMoveCode:
+            case Code.aiMoveCode:
                 addition = aiFromUnity;
                 str = "Ai move request sent to server.";
                 Debug.Log(str);
                 return "ai_move?gid=" + _currentGameId;
-            case passTurnCode:
+            case Code.passTurnCode:
                 addition = empty;
                 str = "Skip turn";
                 Debug.Log(str);
                 if (wantsOnlineGame)
                 {
-                    return "pass_turn_multi?gid=" + _currentGameId + "&p_num=" + this._dataOut[0];
+                    return "pass_turn_multi?gid=" + _currentGameId + "&pn=" +
+                     this.playerName + "&pc=" + this._playerCode + "&";
                 }
                 else
                 {
                     return "pass_turn?gid=" + _currentGameId + "&p_num=" + this._dataOut[0];
                 }
-            case newGameCode:
-                addition = newGameFromUnity;
-                str = "New Game!";
-                Debug.Log(str);
-                return "create_waiting_room?rn=1&p1=Admin_player";//+ this._dataOut[0];
-            case joinGameCode:
-                addition = joinGameFromUnity;
-                str = "Join Game";
-                Debug.Log(str);
-                return "join_waiting_room?gid=" + this._dataOut[0] + "&p_num =" + this._dataOut[1];
-            case leaveGame:
-
+            case Code.newRoomCode:
+                addition = newRoomFromUnity;
+                str = "New room!";
+                strOut = "create_waiting_room?";
+                break;
+            case Code.joinRoomCode:
+                addition = joinRoomFromUnity;
+                str = "Join room";
+                strOut = "join_waiting_room?";
+                break;
+            case Code.queryWaitingRoomCode:
+                return "query_waiting_room?rn=" + this.roomName;
+            case Code.activateGameCode:
+                addition = activateRoomFromUnity;
+                str = "Activate room";
+                strOut = "activate_game?";
+                break;
+            case Code.leaveGameCode:
+                addition = leaveRoomFromUnity;
+                str = "leave room";
+                strOut = "leave_room?";
+                break;
             default:
                 addition = empty;
                 break;
@@ -269,19 +218,164 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         strOut = strOut.Remove(strOut.Length - 1);
         return strOut;
     }
+
+    private void parseReply(string result, Code code = 0)
+    {
+        string[] addition = { };
+        string str = "Data";
+        _dataIn = new int[5];
+
+        var checkErrors = JsonUtility.FromJson<genericAnswerStr>(result);
+
+        if (checkErrors.Result != 0)
+        {
+            _dataIn[0] = Int16.MinValue;
+            errorFromServer = checkErrors.Desc;
+            return;
+        }
+
+        switch (code)
+        {
+            case Code.namesCode:
+                addition = namesRespBack;
+                str = "Names";
+                namesRespBackStr nameParesd = JsonUtility.FromJson<namesRespBackStr>(result);
+                _dataIn[0] = int.Parse(nameParesd.game_id.Substring(0, 3));
+                this._currentGameId = nameParesd.game_id;
+                break;
+            case Code.firstMoveCode:
+                addition = firstRespBack;
+                str = "First Move";
+                firstRespBackStr firstParsed = JsonUtility.FromJson<firstRespBackStr>(result);
+                _dataIn[0] = 1;
+                break;
+            case Code.realMoveCode:
+                addition = realRespBack;
+                str = "Move";
+                realRespBackStr moveParsed = JsonUtility.FromJson<realRespBackStr>(result);
+                _dataIn[0] = moveParsed.number_that_indicates_whether_the_move_was_legal;
+                _dataIn[1] = moveParsed.number_of_squares_closed;
+                break;
+            case Code.aiMoveCode:
+                addition = aiRespBack;
+                str = "Ai move request";
+                aiRespBackStr aiMove = JsonUtility.FromJson<aiRespBackStr>(result);
+                _dataIn[0] = aiMove.shape_num;
+                _dataIn[1] = aiMove.permutation;
+                _dataIn[2] = aiMove.x_position;
+                _dataIn[3] = aiMove.y_position;
+                _dataIn[4] = aiMove.number_of_squares_closed;
+                break;
+            case Code.passTurnCode:
+                addition = empty;
+                str = "Skip turn";
+                break;
+            case Code.newRoomCode:
+                addition = newRoomRespBack;
+                str = "New room created";
+                newRoomRespBackStr newrRoomParesd = JsonUtility.FromJson<newRoomRespBackStr>(result);
+                _dataIn[0] = int.Parse(newrRoomParesd.room_id.Substring(0, 3));
+                _dataIn[1] = 0;
+                this._roomId = newrRoomParesd.room_id;
+                this.roomName = newrRoomParesd.room_name;
+                this._playerCode = newrRoomParesd.player_code;
+                break;
+            case Code.joinRoomCode:
+                addition = joinRoomRespBack;
+                str = "Joined room!";
+                joinRoomRespBackStr joinRoomParsed = JsonUtility.FromJson<joinRoomRespBackStr>(result);
+                _dataIn[0] = int.Parse(joinRoomParsed.player_code.Substring(0, 3));
+                this._playerCode = joinRoomParsed.player_code;
+                break;
+            case Code.queryWaitingRoomCode:
+                addition = joinRoomRespBack;
+                str = "Query waiting room room!";
+                joinWaitingStr queryRoom = JsonUtility.FromJson<joinWaitingStr>(result);
+                _dataIn[0] = queryRoom.Result;
+                this.gameManager.multiPlayerCanvas.updateQuery(getPlayerArrayJoin(queryRoom));
+                break;
+            case Code.activateGameCode:
+                addition = activateRoomRespBack;
+                str = "Activated game!";
+                activateGameRespBackStr activateParsed = JsonUtility.FromJson<activateGameRespBackStr>(result);
+                _dataIn[0] = int.Parse(activateParsed.game_id.Substring(0, 3));
+                if (activateParsed.Result == "0")
+                {
+                    isAdmin = true;
+                    this._currentGameId = activateParsed.game_id;
+                }
+                break;
+            case Code.leaveGameCode:
+                addition = leaveRoomRespBack;
+                str = "Left room";
+                break;
+            default:
+                addition = empty;
+                break;
+        }
+        str = ("For " + str + ", got from server: " + "\n");
+        for (int i = 0; i < addition.Length; i++)
+        {
+            str += (addition[i] + ": " + _dataIn[i] + "\n");
+        }
+        Debug.Log(str);
+    }
     #endregion
 
     #region Network interface
 
     #region Multiplayer functions
-    public async Task<int[]> msgNewMultiplayerGameToServer(string player_name)
+    public async Task<int[]> msgNewMultiplayerGameToServer(string room_name, string player_name)
     {
         try
         {
-            this._dataOut = new string[1] { player_name };
-            int[] result = await sendMessageByCode(newGameCode);
-            this._currentGameId = result[0].ToString();
-            return result;
+            this._dataOut = new string[2] { room_name, player_name };
+            await sendMessageByCode(Code.newRoomCode);
+            if (_dataIn[0] != Int16.MinValue)
+            {
+                this.playerName = player_name;
+                await listenerJoinBroadcastGroup();
+            }
+
+            return _dataIn;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending creat new multiplayer room to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> msgJoinMultiplayerGameToServer(string room_name, string player_name)
+    {
+        try
+        {
+            this._dataOut = new string[2] { room_name, player_name };
+            await sendMessageByCode(Code.joinRoomCode);
+            if (_dataIn[0] != Int16.MinValue)
+            {
+                this.playerName = player_name;
+                await listenerJoinBroadcastGroup();
+            }
+
+            return _dataIn;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending join multiplayer room to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> msgActivateRoomToServer(string room_name)
+    {
+        try
+        {
+            this._dataOut = new string[2] { room_name, this._roomId };
+            await sendMessageByCode(Code.activateGameCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
@@ -291,18 +385,16 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
     }
 
-    public async Task<int[]> msgJoinMultiplayerGameToServer(string game_id, string player_name)
+    public async Task<int[]> msgQueryRoom()
     {
         try
         {
-            this._dataOut = new string[2] { game_id, player_name };
-            int[] result = await sendMessageByCode(joinGameCode);
-            this._currentGameId = game_id;
-            return result;
+            await sendMessageByCode(Code.queryWaitingRoomCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
-            print("An exception occourd in sending join multiplayer game to server!\n The exception is:");
+            print("An exception occourd in sending creat new multiplayer game to server!\n The exception is:");
             print(e);
             return new int[1] { -1 };
         }
@@ -325,13 +417,13 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
                 }
                 this._dataOut[player.playerNum - 1] = stringToInsert;
             }
-            return await sendMessageByCode(namesCode);
+            await sendMessageByCode(Code.namesCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
             print("An exception occourd in sending names to server!\n The exception is:");
             print(e);
-            //this.OnApplicationQuit();
             return new int[1] { -1 };
         }
     }
@@ -341,7 +433,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         try
         {
             this._dataOut = new string[2] { shapeNum.ToString(), permutation.ToString() };
-            return await sendMessageByCode(firstMoveCode);
+            await sendMessageByCode(Code.firstMoveCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
@@ -357,7 +450,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         {
             //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
             this._dataOut = new string[5] { (playerNum + 1).ToString(), pieceNum.ToString(), permutation.ToString(), new_position_x.ToString(), new_position_y.ToString() };
-            return await sendMessageByCode(realMoveCode);
+            await sendMessageByCode(Code.realMoveCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
@@ -374,7 +468,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         {
             //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
             this._dataOut = new string[1] { (playerNum + 1).ToString() };
-            return await sendMessageByCode(aiMoveCode);
+            await sendMessageByCode(Code.aiMoveCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
@@ -390,7 +485,8 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         {
             //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
             this._dataOut = new string[1] { (playerNum + 1).ToString() };
-            return await sendMessageByCode(passTurnCode);
+            await sendMessageByCode(Code.passTurnCode);
+            return _dataIn;
         }
         catch (Exception e)
         {
@@ -400,45 +496,237 @@ Response from Backend: [ shape num,permutation,x position, y position, number of
         }
     }
     #endregion
+
     public async Task byeBye()
     {
-        if (wantsOnlineGame)
+        if (this._currentGameId != "")
+        {
+            if (wantsOnlineGame)
+            {
+                try
+                {
+                    //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
+                    this._dataOut = new string[1] { this._currentGameId };
+                    await sendMessageByCode(Code.leaveGameCode);
+                }
+                catch (Exception e)
+                {
+                    print("An exception occourd in sending end game request to server!\n The exception is:");
+                    print(e);
+                }
+            }
+            else
+            {
+                await _client.GetAsync(_server_http_addr + "end_game?gid=" + _currentGameId);
+            }
+        }
+    }
+
+    #region Server Listener
+
+    private void initializeListenSocket()
+    {
+        _listenerSocket = new SocketIOUnity(_server_http_addr, new SocketIOOptions
+        {
+            Query = new Dictionary<string, string>
+                    {
+                        {"token", "UNITY" }
+                    }
+                ,
+            Transport = SocketIOClient.Transport.TransportProtocol.WebSocket
+        });
+        _listenerSocket.JsonSerializer = new NewtonsoftJsonSerializer();
+        _listenerSocket.OnConnected += (sender, e) =>
+        {
+            Debug.Log("Listener conntected.");
+            //await _listenerSocket.EmitAsync("hi", "socket.io");
+        };
+        /*_listenerSocket.OnPing += (sender, e) =>
+        {
+            Debug.Log("Ping");
+        };
+        _listenerSocket.OnPong += (sender, e) =>
+        {
+            Debug.Log("Pong: " + e.TotalMilliseconds);
+        };*/
+        _listenerSocket.OnDisconnected += (sender, e) =>
+        {
+            Debug.Log("disconnect: " + e);
+        };
+        /*_listenerSocket.OnReconnectAttempt += (sender, e) =>
+        {
+            Debug.Log($"{DateTime.Now} Reconnecting: attempt = {e}");
+        };*/
+    }
+
+    private async Task listenerJoinBroadcastGroup()
+    {
+        try
+        {
+            var msg = new socketIoMsgStr();
+            msg.rn = this.roomName; //Room name.
+            msg.pn = this.playerName; //Player name.
+            msg.pc = this._playerCode; //Unique player code.
+            await _listenerSocket.EmitAsync("join_broadcast_group", JsonUtility.ToJson(msg));
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in joining broadcast!\n The exception is:");
+            print(e);
+        }
+
+    }
+    private void onListenerJoinRequest()
+    {
+        try
+        {
+            _listenerSocket.On("join_request_reply", response =>
+        {
+            string text = response.GetValue<string>();
+            genericAnswerStr responseStr = JsonConvert.DeserializeObject<genericAnswerStr>(text);
+            if (responseStr.Result != 1)
+            {
+                UnityThread.executeInUpdate(() =>
+                {
+                    gameManager.multiPlayerCanvas.showNotification("An error has occourd in joining the room:\n" + responseStr.Desc);
+                });
+            }
+            else
+            {
+                UnityThread.executeInUpdate(() =>
+                {
+                    gameManager.multiPlayerCanvas.showWaitingRoom();
+                });
+            }
+        });
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in callback broadcast!\n The exception is:");
+            print(e);
+        }
+    }
+
+    private void onListenerMoveUpdate()
+    {
+
+        _listenerSocket.On("move_update", async response =>
         {
             try
             {
-                //Adding 1 to player num since here player nums are: 0-3, while in the backend they are 1-4
-                this._dataOut = new string[1] { this._currentGameId };
-                await sendMessageByCode(leaveGame);
+                string text = response.GetValue<string>();
+                Debug.Log("Got update: " + text);
+                genericAnswerStr responseStr = JsonConvert.DeserializeObject<genericAnswerStr>(text);
+                if (text.Contains("Move"))
+                {
+                    if (responseStr.Move == "Player_Joined")
+                    {
+                        joinWaitingStr joinRoomStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
+                        UnityThread.executeInUpdate(() =>
+                    {
+                        gameManager.multiPlayerCanvas.addPlayerToRoom(getPlayerArrayJoin(joinRoomStr));
+                    });
+                    }
+                    else if (responseStr.Move == "Player_Kicked")
+                    {
+                        joinWaitingStr removedFromRoomStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
+                        //DEAL WITH IT LATER IF WE HAVE TIME
+                    }
+                    else if (responseStr.Move == "Player_Left")
+                    {
+                        joinWaitingStr leaveRoomStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
+                        //DEAL WITH IT LATER IF WE HAVE TIME
+                    }
+                    else if (responseStr.Move == "Room_Closed")
+                    {
+                        joinWaitingStr roomClosedStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
+                        //DEAL WITH IT LATER IF WE HAVE TIME
+                    }
+                    else if (responseStr.Move == "Game_started")
+                    {
+                        activateGameRespBackStr activateGameStr = JsonConvert.DeserializeObject<activateGameRespBackStr>(text);
+                        UnityThread.executeInUpdate(async () =>
+                        {
+                            this._currentGameId = activateGameStr.game_id;
+                            this.gameManager.updatePlayersAtGameStart(getPlayerArrayActivate(activateGameStr));
+                            await gameManager.activateGame(false);
+                        });
+                    }
+                    else if (responseStr.Move == "Pass")
+                    {
+                        UnityThread.executeInUpdate(async () =>
+                    {
+                        await this.gameManager.shapesManager.switchTurn();
+                    });
+
+                    }
+                    else if (responseStr.Move == "Ai_Move")
+                    {
+                        moveUpdateStr activateGameStr = JsonConvert.DeserializeObject<moveUpdateStr>(text);
+                        if (gameManager.shapesManager.isFirstTurn)
+                        {
+                            UnityThread.executeInUpdate(async () =>
+                            {
+                                if (!this.gameManager.isAdmin())
+                                {
+                                    await gameManager.shapesManager.updateReceviedMove(
+                                            activateGameStr.Player, activateGameStr.Piece,
+                                            activateGameStr.Perm, 15, 15,
+                                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                                            activateGameStr.number_of_squares_closed);
+
+                                    await gameManager.shapesManager.endFirstMove();
+                                }
+                            });
+
+                        }
+                        else
+                        {
+                            UnityThread.executeInUpdate(async () =>
+                            {
+                                if (!this.gameManager.isAdmin())
+                                {
+                                    await gameManager.shapesManager.updateReceviedMove(
+                                            activateGameStr.Player, activateGameStr.Piece,
+                                            activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
+                                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                                            activateGameStr.number_of_squares_closed);
+                                }
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    moveUpdateStr activateGameStr = JsonConvert.DeserializeObject<moveUpdateStr>(text);
+                    if (gameManager.shapesManager.isFirstTurn)
+                    {
+                        await gameManager.shapesManager.updateReceviedMove(
+                            activateGameStr.Player, activateGameStr.Piece,
+                            activateGameStr.Perm, 15, 15,
+                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                            activateGameStr.number_of_squares_closed);
+                        await gameManager.shapesManager.endFirstMove();
+                    }
+                    else
+                    {
+                        await gameManager.shapesManager.updateReceviedMove(
+                            activateGameStr.Player, activateGameStr.Piece,
+                            activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
+                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                            activateGameStr.number_of_squares_closed);
+                    }
+                }
             }
             catch (Exception e)
             {
-                print("An exception occourd in sending end game request to server!\n The exception is:");
+                print("An exception occourd in callback move!\n The exception is:");
                 print(e);
             }
         }
-        else {
-            await _client.GetAsync(_server_http_addr + "end_game?gid=" + _currentGameId);
-        }
-    }
-    #region Server Listener
-    private void serverListener()
-    {
-        _listener.BeginGetContext(new AsyncCallback(listenerCallback), _listener);
-    }
-
-    private void listenerCallback(IAsyncResult result)
-    {
-        if (_listener.IsListening)
-        {
-            var context = _listener.EndGetContext(result);
-            var request = context.Request;
-
-            Console.WriteLine($"{request}");
-            Console.WriteLine($"{request.Url}");
-
-            serverListener();
-        }
+        );
     }
     #endregion
+
     #endregion
 }

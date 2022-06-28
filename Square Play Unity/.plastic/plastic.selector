@@ -1,0 +1,4 @@
+repository "Square Play@Square_play@cloud"
+  path "/"
+    smartbranch "/main" 
+     

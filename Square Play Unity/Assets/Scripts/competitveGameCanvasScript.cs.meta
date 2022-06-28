@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3aa6383b4e1bc1c489c39d06936993e4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - manager: {instanceID: 0}
+  - gameCanvas: {fileID: 958718630252860603, guid: 43bb7524ce2ab054ba50c321a78e6427, type: 3}
+  - preCanvas: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

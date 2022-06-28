@@ -3,7 +3,8 @@ using UnityEngine.SceneManagement;
 
 public class MenuUI : MonoBehaviour
 {
-    static bool wantsOnlineGame = false;
+    private bool wantsToCreateGame = GameValues.wantsToCreateGame;
+    private bool wantsOnlineGame = GameValues.wantsOnlineGame;
     public GameObject onlineMultiplayerCanvas;
 
     public GameObject mainCanvas;
@@ -18,9 +19,22 @@ public class MenuUI : MonoBehaviour
     }
     public void playOnlineMultiplayerCompetitveGame()
     {
-        wantsOnlineGame = true;
+        GameValues.wantsOnlineGame = true;
         onlineMultiplayerCanvas.SetActive(true);
     }
+
+    public void createGame()
+    {
+        GameValues.wantsToCreateGame = true;
+        SceneManager.LoadScene(1);
+    }
+
+    public void joinGame()
+    {
+        GameValues.wantsToCreateGame = false;
+        SceneManager.LoadScene(1);
+    }
+
     public void playShapesGame()
     {
         //SceneManager.LoadScene(2);

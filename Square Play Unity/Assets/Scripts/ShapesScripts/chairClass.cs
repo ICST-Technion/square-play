@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class chairClass : BaseShape
 {
@@ -9,5 +12,5 @@ public class chairClass : BaseShape
         base.piece_num = newPieceManager.getPieceNumByType(this.name);
 
     }
-
+    
 }
