@@ -65,10 +65,69 @@ public class CompetitiveGameManager : MonoBehaviour
 
         setupTimer();
     }
+    /*
+    private static UnityThread instance = null;
+    public static void initUnityThread(bool visible = false)
+    {
+        if (instance != null)
+        {
+            return;
+        }
 
+        if (Application.isPlaying)
+        {
+            // add an invisible game object to the scene
+            GameObject obj = new GameObject("MainThreadExecuter");
+            if (!visible)
+            {
+                obj.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            DontDestroyOnLoad(obj);
+            instance = obj.AddComponent<UnityThread>();
+        }
+    }
+    public void Awake()
+    {
+        DontDestroyOnLoad(this.gameObject);
+    }
+    public static void executeInUpdate(System.Action action)
+    {
+        if (action == null)
+        {
+            throw new ArgumentNullException("action");
+        }
+
+        lock (actionQueuesUpdateFunc)
+        {
+            actionQueuesUpdateFunc.Add(action);
+            noActionQueueToExecuteUpdateFunc = false;
+        }
+    }*/
     void Update()
     {
         this.turnStatisticsTimeLeft.GetComponent<TextMeshProUGUI>().text = "Time left: " + this.turnTimer.ToString();
+        /*if (noActionQueueToExecuteUpdateFunc)
+        {
+            return;
+        }
+
+        //Clear the old actions from the actionCopiedQueueUpdateFunc queue
+        actionCopiedQueueUpdateFunc.Clear();
+        lock (actionQueuesUpdateFunc)
+        {
+            //Copy actionQueuesUpdateFunc to the actionCopiedQueueUpdateFunc variable
+            actionCopiedQueueUpdateFunc.AddRange(actionQueuesUpdateFunc);
+            //Now clear the actionQueuesUpdateFunc since we've done copying it
+            actionQueuesUpdateFunc.Clear();
+            noActionQueueToExecuteUpdateFunc = true;
+        }
+
+        // Loop and execute the functions from the actionCopiedQueueUpdateFunc
+        for (int i = 0; i < actionCopiedQueueUpdateFunc.Count; i++)
+        {
+            actionCopiedQueueUpdateFunc[i].Invoke();
+        }*/
     }
 
     private void setupTimer(bool activate = true)
@@ -123,6 +182,7 @@ public class CompetitiveGameManager : MonoBehaviour
     }
     private IEnumerator announceNotification(string notificationMsg)
     {
+        this.notification.gameObject.layer = 0;
         print("the notification to be shown:" + notificationMsg);
         this.notification.gameObject.SetActive(true);
         this.notification.GetComponent<TextMeshProUGUI>().text = notificationMsg;
@@ -136,15 +196,28 @@ public class CompetitiveGameManager : MonoBehaviour
         foreach (var player in players)
         {
             player.updateName();
-            if (player.name == this.netManager.playerName)
+            if (player.playerName == this.netManager.playerName)
             {
                 player.isItMe = true;
             }
         }
     }
+    /*
+    private static List<System.Action> actionQueuesUpdateFunc = new List<Action>();
+
+    List<System.Action> actionCopiedQueueUpdateFunc = new List<System.Action>();
+
+    private volatile static bool noActionQueueToExecuteUpdateFunc = true;
+    */
+
+    public async Task insertShapeMoveUpdateAction(string pname, int piece, int perm, int x, int y, int legal_num, int closed_num, bool is_first_turn = false)
+    {
+        await this.shapesManager.updateReceviedMove(pname, piece, perm, x, y, legal_num, closed_num, is_first_turn);
+    }
 
     public void updateCurrentPlayerName(int currentPlayer)
     {
+
         this.turnStatisticsPlayerName.GetComponent<TextMeshProUGUI>().text = this.players[currentPlayer].playerName + "'s Turn!";
     }
 
@@ -164,9 +237,9 @@ public class CompetitiveGameManager : MonoBehaviour
     {
         for (int i = 0; i < names.Length; i++)
         {
-            players[i].name = names[i];
+            players[i].playerName = names[i];
             players[i].playerNum = i;
-            if (players[i].name.Contains("AI"))
+            if (players[i].playerName.Contains("AI"))
             {
                 players[i].isAi = true;
             }
@@ -181,6 +254,29 @@ public class CompetitiveGameManager : MonoBehaviour
     public bool isAdmin()
     {
         return this.netManager.isAdmin;
+    }
+
+    private int findLastJoinedIdx()
+    {
+        foreach (var player in this.players)
+        {
+            if (player.name.Contains("AI"))
+            {
+                return player.playerNum - 1;
+            }
+        }
+        return 3;
+    }
+    public bool isPlayerAlreadyInRoom(string name)
+    {
+        foreach (var player in this.players)
+        {
+            if (player.name == name)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void showNotification(string msg)
@@ -244,6 +340,7 @@ public class CompetitiveGameManager : MonoBehaviour
 
     public async Task<int[]> msgMoveToServer(int playerNum, int pieceNum, int permutation, int new_position_x, int new_position_y)
     {
+        print("MOVE!");
         int[] result = await this.netManager.msgMoveToServer(playerNum, pieceNum, permutation, new_position_x, new_position_y);
         if (result[0] == Int16.MinValue)
         {
@@ -275,10 +372,10 @@ public class CompetitiveGameManager : MonoBehaviour
         return result;
     }
 
-    public async Task<int[]> msgNewMultiplayerGameToServer(string room_name, string player_name)
+    public async Task<int[]> msgCreateMultiplayerGameToServer(string room_name, string player_name)
     {
         this.players[0].thisIsMe(player_name);
-        int[] result = await this.netManager.msgNewMultiplayerGameToServer(room_name, player_name);
+        int[] result = await this.netManager.msgCreateMultiplayerGameToServer(room_name, player_name);
         if (result[0] == Int16.MinValue)
         {
             showNotification("Error from server: " + this.netManager.errorFromServer);
@@ -296,10 +393,11 @@ public class CompetitiveGameManager : MonoBehaviour
             showNotification("Error from server: " + this.netManager.errorFromServer);
             return new int[1] { -1 };
         }
-        int player_num = result[1];
-        this.players[player_num - 1].thisIsMe(player_name);
+        int player_num = this.findLastJoinedIdx();
+        this.players[player_num].thisIsMe(player_name);
         return result;
     }
+
 
     public async Task<int[]> msgActivateGameToServer(string room_name)
     {

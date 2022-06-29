@@ -9,6 +9,7 @@ public class PlayerClass : MonoBehaviour
     public int playerNum = 0;
 
     public string playerName = "";
+    public string playerCode = "";
 
     public bool isAi = true;
 

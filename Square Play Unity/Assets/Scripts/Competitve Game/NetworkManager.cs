@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-//using System.Net.Http.WebRequest;
 using SocketIOClient;
 using SocketIOClient.Newtonsoft.Json;
 using UnityEngine;
@@ -18,7 +17,7 @@ public class NetworkManager : MonoBehaviour
     {
         namesCode, firstMoveCode, realMoveCode,
         aiMoveCode, passTurnCode, newRoomCode,
-        joinRoomCode, activateGameCode, leaveGameCode, queryWaitingRoomCode
+        joinRoomCode, activateGameCode, leaveGameCode, queryWaitingRoomCode, closeRoom
     };
 
     #region Response and Data out literals
@@ -202,8 +201,9 @@ public class NetworkManager : MonoBehaviour
             case Code.leaveGameCode:
                 addition = leaveRoomFromUnity;
                 str = "leave room";
-                strOut = "leave_room?";
-                break;
+                return "leave_room?rn=" + this.roomName + "&pn=" + this.playerName + "&pc=" + this._playerCode;
+            case Code.closeRoom:
+                return "close_room?rn=" + this.roomName + "&r_id=" + this._roomId;
             default:
                 addition = empty;
                 break;
@@ -325,7 +325,7 @@ public class NetworkManager : MonoBehaviour
     #region Network interface
 
     #region Multiplayer functions
-    public async Task<int[]> msgNewMultiplayerGameToServer(string room_name, string player_name)
+    public async Task<int[]> msgCreateMultiplayerGameToServer(string room_name, string player_name)
     {
         try
         {
@@ -356,7 +356,9 @@ public class NetworkManager : MonoBehaviour
             if (_dataIn[0] != Int16.MinValue)
             {
                 this.playerName = player_name;
+                this.roomName = room_name;
                 await listenerJoinBroadcastGroup();
+                //await this.msgQueryRoom();
             }
 
             return _dataIn;
@@ -390,6 +392,35 @@ public class NetworkManager : MonoBehaviour
         try
         {
             await sendMessageByCode(Code.queryWaitingRoomCode);
+            return _dataIn;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending creat new multiplayer game to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+
+    public async Task<int[]> leaveRoom()
+    {
+        try
+        {
+            await sendMessageByCode(Code.leaveGameCode);
+            return _dataIn;
+        }
+        catch (Exception e)
+        {
+            print("An exception occourd in sending creat new multiplayer game to server!\n The exception is:");
+            print(e);
+            return new int[1] { -1 };
+        }
+    }
+    public async Task<int[]> closeRoom()
+    {
+        try
+        {
+            await sendMessageByCode(Code.closeRoom);
             return _dataIn;
         }
         catch (Exception e)
@@ -541,22 +572,11 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("Listener conntected.");
             //await _listenerSocket.EmitAsync("hi", "socket.io");
         };
-        /*_listenerSocket.OnPing += (sender, e) =>
-        {
-            Debug.Log("Ping");
-        };
-        _listenerSocket.OnPong += (sender, e) =>
-        {
-            Debug.Log("Pong: " + e.TotalMilliseconds);
-        };*/
         _listenerSocket.OnDisconnected += (sender, e) =>
         {
             Debug.Log("disconnect: " + e);
         };
-        /*_listenerSocket.OnReconnectAttempt += (sender, e) =>
-        {
-            Debug.Log($"{DateTime.Now} Reconnecting: attempt = {e}");
-        };*/
+
     }
 
     private async Task listenerJoinBroadcastGroup()
@@ -576,6 +596,7 @@ public class NetworkManager : MonoBehaviour
         }
 
     }
+    private bool iJustJoined = false;
     private void onListenerJoinRequest()
     {
         try
@@ -583,8 +604,9 @@ public class NetworkManager : MonoBehaviour
             _listenerSocket.On("join_request_reply", response =>
         {
             string text = response.GetValue<string>();
+            Debug.Log("Got resp on join req: " + text);
             genericAnswerStr responseStr = JsonConvert.DeserializeObject<genericAnswerStr>(text);
-            if (responseStr.Result != 1)
+            if (responseStr.Result != 0)
             {
                 UnityThread.executeInUpdate(() =>
                 {
@@ -593,8 +615,9 @@ public class NetworkManager : MonoBehaviour
             }
             else
             {
-                UnityThread.executeInUpdate(() =>
+                UnityThread.executeInUpdate(async () =>
                 {
+                    await this.msgQueryRoom();
                     gameManager.multiPlayerCanvas.showWaitingRoom();
                 });
             }
@@ -623,9 +646,9 @@ public class NetworkManager : MonoBehaviour
                     {
                         joinWaitingStr joinRoomStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
                         UnityThread.executeInUpdate(() =>
-                    {
-                        gameManager.multiPlayerCanvas.addPlayerToRoom(getPlayerArrayJoin(joinRoomStr));
-                    });
+                        {
+                            gameManager.multiPlayerCanvas.addPlayerToRoom(getPlayerArrayJoin(joinRoomStr));
+                        });
                     }
                     else if (responseStr.Move == "Player_Kicked")
                     {
@@ -635,12 +658,20 @@ public class NetworkManager : MonoBehaviour
                     else if (responseStr.Move == "Player_Left")
                     {
                         joinWaitingStr leaveRoomStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
-                        //DEAL WITH IT LATER IF WE HAVE TIME
+                        UnityThread.executeInUpdate(async () =>
+                        {
+                            gameManager.multiPlayerCanvas.showNotification("A player has left the waiting room!");
+                            await this.msgQueryRoom();
+                        });
                     }
                     else if (responseStr.Move == "Room_Closed")
                     {
                         joinWaitingStr roomClosedStr = JsonConvert.DeserializeObject<joinWaitingStr>(text);
-                        //DEAL WITH IT LATER IF WE HAVE TIME
+                        UnityThread.executeInUpdate(async () =>
+                        {
+                            gameManager.multiPlayerCanvas.showNotification("This waiting room was closed by the admin!");
+                            await gameManager.multiPlayerCanvas.goBack();
+                        });
                     }
                     else if (responseStr.Move == "Game_started")
                     {
@@ -655,9 +686,9 @@ public class NetworkManager : MonoBehaviour
                     else if (responseStr.Move == "Pass")
                     {
                         UnityThread.executeInUpdate(async () =>
-                    {
-                        await this.gameManager.shapesManager.switchTurn();
-                    });
+                        {
+                            await this.gameManager.shapesManager.switchTurn();
+                        });
 
                     }
                     else if (responseStr.Move == "Ai_Move")
@@ -669,11 +700,11 @@ public class NetworkManager : MonoBehaviour
                             {
                                 if (!this.gameManager.isAdmin())
                                 {
-                                    await gameManager.shapesManager.updateReceviedMove(
+                                    await gameManager.insertShapeMoveUpdateAction(
                                             activateGameStr.Player, activateGameStr.Piece,
                                             activateGameStr.Perm, 15, 15,
                                             activateGameStr.number_that_indicates_whether_the_move_was_legal,
-                                            activateGameStr.number_of_squares_closed);
+                                            activateGameStr.number_of_squares_closed, true);
 
                                     await gameManager.shapesManager.endFirstMove();
                                 }
@@ -682,39 +713,48 @@ public class NetworkManager : MonoBehaviour
                         }
                         else
                         {
-                            UnityThread.executeInUpdate(async () =>
+                            if (!this.gameManager.isAdmin())
                             {
-                                if (!this.gameManager.isAdmin())
-                                {
-                                    await gameManager.shapesManager.updateReceviedMove(
-                                            activateGameStr.Player, activateGameStr.Piece,
-                                            activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
-                                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
-                                            activateGameStr.number_of_squares_closed);
-                                }
-                            });
+                                UnityThread.executeInUpdate(async () =>
+                           {
+                               await gameManager.insertShapeMoveUpdateAction(
+                                       activateGameStr.Player, activateGameStr.Piece,
+                                       activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
+                                       activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                                       activateGameStr.number_of_squares_closed);
+                           });
+                            }
                         }
                     }
                 }
                 else
                 {
-                    moveUpdateStr activateGameStr = JsonConvert.DeserializeObject<moveUpdateStr>(text);
-                    if (gameManager.shapesManager.isFirstTurn)
+                    if (!gameManager.players[this.gameManager.shapesManager.currentPlayer].isItMe)
                     {
-                        await gameManager.shapesManager.updateReceviedMove(
-                            activateGameStr.Player, activateGameStr.Piece,
-                            activateGameStr.Perm, 15, 15,
-                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
-                            activateGameStr.number_of_squares_closed);
-                        await gameManager.shapesManager.endFirstMove();
-                    }
-                    else
-                    {
-                        await gameManager.shapesManager.updateReceviedMove(
-                            activateGameStr.Player, activateGameStr.Piece,
-                            activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
-                            activateGameStr.number_that_indicates_whether_the_move_was_legal,
-                            activateGameStr.number_of_squares_closed);
+                        moveUpdateStr activateGameStr = JsonConvert.DeserializeObject<moveUpdateStr>(text);
+                        if (gameManager.shapesManager.isFirstTurn)
+                        {
+                            UnityThread.executeInUpdate(async () =>
+                            {
+                                await gameManager.insertShapeMoveUpdateAction(
+                                    activateGameStr.Player, activateGameStr.Piece,
+                                    activateGameStr.Perm, 15, 15,
+                                    activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                                    activateGameStr.number_of_squares_closed, true);
+                                await gameManager.shapesManager.endFirstMove();
+                            });
+                        }
+                        else
+                        {
+                            UnityThread.executeInUpdate(async () =>
+                            {
+                                await gameManager.insertShapeMoveUpdateAction(
+                                    activateGameStr.Player, activateGameStr.Piece,
+                                    activateGameStr.Perm, activateGameStr.x_coor, activateGameStr.y_coor,
+                                    activateGameStr.number_that_indicates_whether_the_move_was_legal,
+                                    activateGameStr.number_of_squares_closed);
+                            });
+                        }
                     }
                 }
             }

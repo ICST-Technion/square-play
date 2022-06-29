@@ -3,6 +3,6 @@ using System.Collections.Generic;
 
 public class GameValues
 {
-    public static bool wantsToCreateGame = true;
-    public static bool wantsOnlineGame = true;
+    public static bool wantsToCreateGame = false;
+    public static bool wantsOnlineGame = false;
 }

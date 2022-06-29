@@ -15,6 +15,8 @@ public class MenuUI : MonoBehaviour
 
     public void playLocalCompetitveGame()
     {
+        GameValues.wantsOnlineGame = false;
+        GameValues.wantsToCreateGame = false;
         SceneManager.LoadScene(1);
     }
     public void playOnlineMultiplayerCompetitveGame()
@@ -45,10 +47,10 @@ public class MenuUI : MonoBehaviour
     }
     public void viewAboutPage()
     {
-        SceneManager.LoadScene(2);
+        SceneManager.LoadScene(4);
     }
     public void viewRulesPage()
     {
-        SceneManager.LoadScene(3);
+        SceneManager.LoadScene(5);
     }
 }

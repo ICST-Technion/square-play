@@ -53,7 +53,6 @@ public abstract class BaseShape : MonoBehaviour
         this.startTransformation = startTrans;
         this.transform.SetParent(startTrans);
         this.transform.localPosition = pos;
-        print("pos: " + x + " " + y);
         this.startingPosition = pos;
     }
 
@@ -235,12 +234,15 @@ public abstract class BaseShape : MonoBehaviour
 
     public void placePieceOnBoard(int x, int y, int perm)
     {
-        this.transform.SetParent(this.shapeManager.boardtrans);
-        var startingPos = new Vector3(x, y);
-        this.nearestCell = this.shapeManager.getNearestCell(startingPos);
-        this.transform.SetParent(this.shapeManager.canvasTrans);
-        this.rotateByPermutation(perm);
-        this.Place();
+        UnityThread.executeInUpdate(() =>
+        {
+            this.transform.SetParent(this.shapeManager.boardtrans);
+            var startingPos = new Vector3(x, y);
+            this.nearestCell = this.shapeManager.getNearestCell(startingPos);
+            this.transform.SetParent(this.shapeManager.canvasTrans);
+            this.rotateByPermutation(perm);
+            this.Place();
+        });
     }
 
     #endregion

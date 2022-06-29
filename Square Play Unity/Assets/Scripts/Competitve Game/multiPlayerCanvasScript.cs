@@ -13,15 +13,18 @@ public class multiPlayerCanvasScript : MonoBehaviour
     public multiPlayerCanvasScript joinCanvas;
     public GameObject waitingRoom;
     public GameObject mainJoin;
+    public GameObject waitingRoomName;
     public GameObject[] joiningPlayers;
     public Button playGameButton;
     public Button pregameBackButton;
+    public Button waitingRoomBackButton;
     [SerializeField]
     private string enteringPlayersName;
     [SerializeField]
     private string joiningRoomName;
     private bool wantsToCreateGame = GameValues.wantsToCreateGame;
     public GameObject notification;
+    [SerializeField]
     private int currentlyInRoom = 1;
     public Button activateGameButton;
     public GameObject textToDisplay;
@@ -44,6 +47,7 @@ public class multiPlayerCanvasScript : MonoBehaviour
         waitingRoom.gameObject.SetActive(false);
         mainJoin.gameObject.SetActive(true);
         pregameBackButton.onClick.AddListener(async () => await goBack());
+        waitingRoomBackButton.onClick.AddListener(async () => await waitingRoomBack());
     }
 
     private bool timerSet = false;
@@ -57,18 +61,31 @@ public class multiPlayerCanvasScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        TimeSpan duration = DateTime.Now.Subtract(countdownUp);
+        /*TimeSpan duration = DateTime.Now.Subtract(countdownUp);
         if (timerSet && duration >= TimeSpan.FromSeconds(30))
         {
             Debug.Log("Query!");
             manager.netManager.msgQueryRoom();
-        }
+        }*/
     }
 
     public async Task goBack()
     {
         await manager.byeBye();
         SceneManager.LoadScene(0);
+    }
+
+    public async Task waitingRoomBack()
+    {
+        if (this.manager.isAdmin())
+        {
+            await manager.netManager.closeRoom();
+        }
+        else
+        {
+            await manager.netManager.leaveRoom();
+        }
+        SceneManager.LoadScene(1);
     }
 
     public void gameId(string game_id)
@@ -87,7 +104,11 @@ public class multiPlayerCanvasScript : MonoBehaviour
     {
         if (enteringPlayersName != "" && joiningRoomName != "")
         {
-            await manager.msgNewMultiplayerGameToServer(joiningRoomName, enteringPlayersName);
+            var result = await manager.msgCreateMultiplayerGameToServer(joiningRoomName, enteringPlayersName);
+            if (result[0] != Int16.MinValue)
+            {
+                this.currentlyInRoom++;
+            }
             joiningPlayers[0].GetComponent<TextMeshProUGUI>().text = enteringPlayersName;
         }
         else
@@ -102,6 +123,7 @@ public class multiPlayerCanvasScript : MonoBehaviour
         {
             waitingRoom.gameObject.SetActive(true);
             mainJoin.gameObject.SetActive(false);
+            waitingRoomName.GetComponent<TextMeshProUGUI>().text = "Waiting room: " + this.manager.netManager.roomName;
         }
         catch (Exception e)
         {
@@ -111,13 +133,18 @@ public class multiPlayerCanvasScript : MonoBehaviour
 
     public void addPlayerToRoom(string[] names)
     {
-        var new_idx = currentlyInRoom - 1;
+        //When there is 1 person in the room, currentlyInRoom=1, thus the new joining player would have index =1 in the players array.
+        //When there are 2 people in the room, currentlyInRoom=2, thus the new joining player would have index =2 in the players array.
+        var new_idx = currentlyInRoom;
         var now_joined = names[new_idx];
-        manager.players[new_idx].name = now_joined;
-        manager.players[new_idx].playerNum = new_idx;
-        joiningPlayers[new_idx].GetComponent<TextMeshProUGUI>().text = now_joined;
-
-        currentlyInRoom++;
+        if (!this.manager.isPlayerAlreadyInRoom(now_joined))
+        {
+            manager.players[new_idx].name = now_joined;
+            //manager.players[new_idx].playerNum = new_idx;
+            joiningPlayers[new_idx].GetComponent<TextMeshProUGUI>().text = now_joined;
+            joiningPlayers[new_idx].SetActive(true);
+            currentlyInRoom++;
+        }
     }
 
     public void updateQuery(string[] names)
@@ -125,11 +152,14 @@ public class multiPlayerCanvasScript : MonoBehaviour
         for (int i = 0; i < names.Length; i++)
         {
             manager.players[i].name = names[i];
-            manager.players[i].playerNum = i;
+            //manager.players[i].playerNum = i;
+            if (!manager.players[i].name.Contains("AI"))
+            {
+                joiningPlayers[i].gameObject.SetActive(true);
+                currentlyInRoom = i + 1;
+            }
             joiningPlayers[i].GetComponent<TextMeshProUGUI>().text = manager.players[i].name;
-
         }
-        currentlyInRoom++;
     }
 
     public async Task joinGame()

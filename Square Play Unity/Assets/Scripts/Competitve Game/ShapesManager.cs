@@ -78,14 +78,22 @@ public class ShapesManager : MonoBehaviour
     private void setupShapes(Color teamColor, PlayerClass bank, bool isUp = false, bool isDown = false)
     {
         int playerNum = bank.playerNum;
-        // Vector3 textPos = //this.gameManager.players[playerNum].playerNameTextObj.transform.localPosition;
-        playerTexts[playerNum - 1].transform.SetParent(bank.gameObject.transform);
-        Vector3 textPos = playerTexts[playerNum - 1].transform.localPosition;
-        print(textPos);
+        GameObject playersText = playerTexts[playerNum - 1];
+        playersText.transform.SetParent(bank.gameObject.transform);
+        Vector3 textPos = playersText.transform.localPosition;
         var absoluteX = textPos.x;//+ 
         var absoluteY = textPos.y;//+ 
         int x_add = 0, y_add = 0;
-
+        if (isUp || isDown)
+        {
+            absoluteX += 70;
+            absoluteY += 45;
+        }
+        else
+        {
+            absoluteX -= 35;
+            absoluteY -= 60;
+        }
         bank.playerShapes.ForEach(delegate (BaseShape shape)
         {
             shape.Setup(teamColor, this);
@@ -133,23 +141,22 @@ public class ShapesManager : MonoBehaviour
     {
         if ((!this.isHeHuman() && value) || (value && !this.isHeHuman() && this.gameManager.isAdmin() && wantsOnlineGame))
         {
+            print("ai move...");
+            int[] aiMove = await this.requestAiMove();
+            if (aiMove.Length > 2)
             {
-                int[] aiMove = await this.requestAiMove();
-                if (aiMove.Length > 2)
+                if (wantsOnlineGame)
                 {
-                    if (wantsOnlineGame)
-                    {
-                        await MoveShapeForAi(aiMove, gameManager.players[currentPlayer].playerShapes);
-                    }
-                    else
-                    {
-                        await MoveShapeForAi(aiMove, allShapes);
-                    }
+                    await MoveShapeForAi(aiMove, gameManager.players[currentPlayer].playerShapes);
+                }
+                else
+                {
+                    await MoveShapeForAi(aiMove, allShapes);
+                }
 
-                    if (this.isFirstTurn)
-                    {
-                        await this.endFirstMove();
-                    }
+                if (this.isFirstTurn)
+                {
+                    await this.endFirstMove();
                 }
             }
         }
@@ -240,15 +247,19 @@ public class ShapesManager : MonoBehaviour
         return iscurr;
     }
 
-    public async Task updateReceviedMove(string pname, int piece, int perm, int x, int y, int legal_num, int closed_num)
+    public async Task updateReceviedMove(string pname, int piece, int perm, int x, int y, int legal_num, int closed_num, bool is_first_turn)
     {
         foreach (var shape in gameManager.players[currentPlayer].playerShapes)
         {
             if (shape.piece_num == piece)
             {
+
                 shape.placePieceOnBoard(x, y, perm);
-                this.currentPlayerClosedSquares(closed_num);
-                await this.switchTurn();
+                if (!is_first_turn)
+                {
+                    this.currentPlayerClosedSquares(closed_num);
+                    await this.switchTurn();
+                }
                 return;
             }
         }
