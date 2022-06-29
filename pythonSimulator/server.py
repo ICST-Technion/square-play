@@ -22,25 +22,26 @@ game_to_room_map = {}
 
 """
 SAMPLE SINGLE PLAYER GAME:
-http://127.0.0.1:5000/start_new_game?p1=p_1&p2=p_2&p3=AI_Player1&p4=AI_Player2
-http://127.0.0.1:5000/first_move?gid=1298297976736304479&piece=2&perm=1
-http://127.0.0.1:5000/reg_move?gid=1298297976736304479&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
-http://127.0.0.1:5000/pass_turn?gid=1298297976736304479&p_num=2
-http://127.0.0.1:5000/ai_move?gid=1298297976736304479
-http://127.0.0.1:5000/end_game?gid=1298297976736304479
+http://132.69.8.19:80/start_new_game?p1=p_1&p2=p_2&p3=AI_Player1&p4=AI_Player2
+http://132.69.8.19:80/first_move?gid=1298297976736304479&piece=2&perm=1
+http://132.69.8.19:80/reg_move?gid=1298297976736304479&p_num=1&piece=15&perm=1&x_coor=15&y_coor=13
+http://132.69.8.19:80/pass_turn?gid=1298297976736304479&p_num=2
+http://132.69.8.19:80/ai_move?gid=1298297976736304479
+http://132.69.8.19:80/end_game?gid=1298297976736304479
 """
 
 """
 SAMPLE MULTIPLAYER GAME:
-http://127.0.0.1:5000/create_waiting_room?rn=1&p1=Admin_player
+http://132.69.8.19:80/create_waiting_room?rn=1&p1=Admin_player
 {"Result":"[0]","Desc":"OK","state":"1","room_id":"-5263700288565586101","room_name":"1"}
-http://127.0.0.1:5000/join_waiting_room?rn=1&pn=player2
+http://132.69.8.19:80/join_waiting_room?rn=1&pn=player2
 {"Result":"[0]","Desc":"OK","state":"1","player_code":-6035365310716894887}
-http://127.0.0.1:5000/activate_game?rn=1&r_id=-5263700288565586101
+http://132.69.8.19:80/activate_game?rn=1&r_id=-5263700288565586101
 {"Result":"[0]","Desc":"OK","game_id":"-1781493617116865433"}
-http://127.0.0.1:5000/ai_move?gid=-1781493617116865433
+http://132.69.8.19:80/ai_move?gid=-1781493617116865433
 {"Result":"[0]","Desc":"OK","shape_num":"15","permutation":"1","number_of_squares_closed":"-1"}
-http://127.0.0.1:5000/reg_move_multi?gid=-7970304273228674816&pn=Admin_player&pc=8253353491383645553&piece=8&perm=1&x_coor=15&y_coor=17
+http://132.69.8.19:80/reg_move_multi?gid=-7970304273228674816&pn=Admin_player&pc=8253353491383645553&piece=8&perm=1&x_coor=15&y_coor=17
+http://132.69.8.19:80/first_move_multi?gid=-7970304273228674816&pn=p1&pc=0&piece=8&perm=1
 {"Result":"[2, 1]"}
 
 """
@@ -76,6 +77,7 @@ async def create_new_room(rn: str, p1: str):
 
     room_id = hash(datetime.datetime.now().isoformat() + str(room_admin))
     game_rooms[room_name] = GameRoom(room_name, room_id, room_admin)
+    print("new room named: "+rn)
     code = hash(datetime.datetime.now().isoformat() + str(room_admin))
     game_rooms[rn].player_codes[room_admin] = code
     return {'Result': '0', 'Desc': 'OK', 'state': '1', "room_id": str(room_id), 'room_name': str(room_name),"player_code":str(code)}
@@ -83,7 +85,6 @@ async def create_new_room(rn: str, p1: str):
 
 @app.get('/query_waiting_room')
 async def query_waiting_room(rn: str):
-    # fix like the rest later
     to_send = ""
     if rn not in game_rooms:
         to_send = {'state': '-1', 'game_id': '-1'}
@@ -95,10 +96,13 @@ async def query_waiting_room(rn: str):
                    }
     to_send = str(to_send)
     pnames=game_rooms[rn].players
+    pnames=pnames+[str(i+1)+"_AI_player" for i in range(len(pnames)-1,4)]
+   
     p1=pnames[0]
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
+
     return {'Result': '0', 'Desc': 'OK','state': str(game_rooms[rn].state),
                    'game_id': str(game_rooms[rn].game_id),
                    'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4)}
@@ -113,6 +117,8 @@ async def query_all_rooms():
 @app.get('/join_waiting_room')
 async def join_waiting_room(rn: str, pn: str):
     if rn not in game_rooms:
+        print(rn)
+        print(game_rooms)
         return {"Result": '-1', "Desc": 'Game room does not exist'}
     if pn in game_rooms[rn].players:
         return {"Result": '-3', "Desc": 'Game room already has a player with that name'}
@@ -120,15 +126,19 @@ async def join_waiting_room(rn: str, pn: str):
         return {"Result": '-4', "Desc": 'Game has already begun'}
     if len(game_rooms[rn].players) >= 4:
         return {"Result": '-6', "Desc": 'Room has too many players'}
-
+    print("no error")
     game_rooms[rn].players.append(pn)
     code = hash(datetime.datetime.now().isoformat() + str(pn))
     game_rooms[rn].player_codes[pn] = code
+    print(pn+" joined. His code: "+str(code))
     pnames=game_rooms[rn].players
+    pnames=pnames+[str(i+1)+"_AI_player" for i in range(len(pnames)-1,4)]
+    
     p1=pnames[0]
     p2=pnames[1]
     p3=pnames[2]
     p4=pnames[3]
+
     await game_rooms[rn].broadcast_move({'Move': 'Player_Joined', 'p1': str(p1),'p2':str(p2),'p3':str(p3),'p4':str(p4),
                                          'Result': '0', 'Desc': 'OK'})
     return {'Result': '0', 'Desc': 'OK', 'state': str(game_rooms[rn].state), 'player_code': str(code)}
@@ -149,6 +159,8 @@ async def remove_from_room(rn: str, r_id: int, pn: str):
     game_rooms[rn].players.remove(pn)
     game_rooms[rn].player_codes.pop(pn, None)
     pnames=game_rooms[rn].players
+    pnames=pnames+[str(i+1)+"_AI_player" for i in range(len(pnames)-1,4)]
+    
     p1=pnames[0]
     p2=pnames[1]
     p3=pnames[2]
@@ -174,6 +186,8 @@ async def leave_room(rn: str, pn: str, pc: int):
     game_rooms[rn].player_codes.pop(pn, None)
     game_rooms[rn].broadcast.pop(pn, None)
     pnames=game_rooms[rn].players
+    pnames=pnames+[str(i+1)+"_AI_player" for i in range(len(pnames)-1,4)]
+    
     p1=pnames[0]
     p2=pnames[1]
     p3=pnames[2]
@@ -218,11 +232,14 @@ async def activate_game(rn: str, r_id: int):
             players.append(Player(name=name))
 
     new_game_id = hash(datetime.datetime.now().isoformat() + str(player_names))
+    print("new game id: "+str(new_game_id))
     current_games[new_game_id] = EventGame(players)
     game_rooms[rn].state = 2
     game_rooms[rn].game_id = new_game_id
     game_to_room_map[new_game_id] = rn
     pnames=game_rooms[rn].players
+    pnames=pnames+[str(i+1)+"_AI_player" for i in range(len(pnames)-1,4)]
+    
     p1=pnames[0]
     p2=pnames[1]
     p3=pnames[2]
@@ -236,6 +253,9 @@ async def activate_game(rn: str, r_id: int):
 @app.get('/first_move_multi')
 async def first_move_multi(gid: int, pn: str, pc: int, piece: int, perm: int):
     if gid not in current_games:
+        print("gid not in current gamesQ!")
+        print(gid)
+        print(current_games)
         return {'Result': '[-22]'}
     game = current_games[gid]
     if game.players[game.curr_player_num - 1].ai_player:
@@ -332,7 +352,7 @@ async def pass_turn_multi(gid: int, pn: str, pc: int):
     await room.broadcast_move({'Player': pn, "Piece": -1, 'Move': 'Pass',
                                'Result': to_send, 'Desc': 'OK',
                                })
-    return {'Result': to_send, 'Desc': 'OK'}
+    return {'Result': '0', 'Desc': 'OK'}
 
 
 # ----------------- single player version -----------------
@@ -480,6 +500,8 @@ async def join_broadcast_group(sid, msg):
     except Exception as e:
         return
     if rn not in game_rooms:
+        print(rn)
+        print(game_rooms)
         await sio.emit("join_request_reply", '{"Result": "-1", "Desc": "Game room does not exist"}')
         return {"Result": "-1", "Desc": "Game room does not exist"}
     if pn not in game_rooms[rn].players:
@@ -489,16 +511,16 @@ async def join_broadcast_group(sid, msg):
         await sio.emit("join_request_reply", '{"Result": "-35", "Desc": "Wrong Player Code"}')
         return {"Result": "-35", "Desc": "Wrong Player Code"}
     game_rooms[rn].broadcast[pn] = sid
-    await sio.emit("join_request_reply", '{"Result": "1", "Desc": "Success"}')
-    return {"Result": "1", "Desc": "Success"}
+    await sio.emit("join_request_reply", '{"Result": "0", "Desc": "Success"}')
+    return {"Result": "0", "Desc": "Success"}
 
 
 def run_server():
     print(f"Listening on port 80...")
     uvicorn.run("server:app", host="132.69.8.19", port=80)
 
-    #  print(f"Listening on port 5000...")
-    #  uvicorn.run("server:app", host="127.0.0.1", port=5000)
+    #  print(f"Listening on port 80...")
+    #  uvicorn.run("server:app", host="132.69.8.19", port=80)
 
 
 if __name__ == '__main__':
